@@ -2,7 +2,9 @@ module Sourcify
   module Proc
     module Ragel
 
-      class Escape < Exception; end
+      class EndOfBlock < Exception; end
+      class EndOfLine  < Exception; end
+      class Escape     < Exception; end
 
 %%{
   machine proc;
@@ -27,36 +29,40 @@ module Sourcify
 
   var           = [a-z_][a-zA-Z0-9_]*;
   symbol        = ':' . var;
+  newline       = '\n';
 
   assoc         = '=>';
   assgn         = '=';
+  smcolon       = ';';
 
   main := |*
 
-      lbrace   => { push(:lbrace, data, ts, te) };
-      rbrace   => { push(:rbrace, data, ts, te) };
-      lparen   => { push(:lparen, data, ts, te) };
-      rparen   => { push(:rparen, data, ts, te) };
+      kw_do => { push(k = :kw_do, ts, te); increment(k,0) };
+      kw_end => { push(k = :kw_end, ts, te); decrement(k,0) };
+      kw_class => { push(k = :kw_class, ts, te); increment(k,0) };
+      kw_module => { push(k = :kw_module, ts, te); increment(k,0) };
+      kw_def => { push(k = :kw_def, ts, te); increment(k,0) };
+      kw_while => { push(k = :kw_while, ts, te); increment(k,0) };
+      kw_until => { push(k = :kw_until, ts, te); increment(k,0) };
+      kw_begin => { push(k = :kw_begin, ts, te); increment(k,0) };
+      kw_case => { push(k = :kw_case, ts, te); increment(k,0) };
+      kw_for => { push(k = :kw_for, ts, te); increment(k,0) };
+      kw_if => { push(k = :kw_if, ts, te); increment(k,0) };
+      kw_unless => { push(k = :kw_unless, ts, te); increment(k,0) };
 
-      kw_do => { push(k = :kw_do, data, ts, te); increment(k,0) };
-      kw_end => { push(k = :kw_end, data, ts, te); decrement(k,0) };
-      kw_class => { push(k = :kw_class, data, ts, te); increment(k,0) };
-      kw_module => { push(k = :kw_module, data, ts, te); increment(k,0) };
-      kw_def => { push(k = :kw_def, data, ts, te); increment(k,0) };
-      kw_while => { push(k = :kw_while, data, ts, te); increment(k,0) };
-      kw_until => { push(k = :kw_until, data, ts, te); increment(k,0) };
-      kw_begin => { push(k = :kw_begin, data, ts, te); increment(k,0) };
-      kw_case => { push(k = :kw_case, data, ts, te); increment(k,0) };
-      kw_for => { push(k = :kw_for, data, ts, te); increment(k,0) };
-      kw_if => { push(k = :kw_if, data, ts, te); increment(k,0) };
-      kw_unless => { push(k = :kw_unless, data, ts, te); increment(k,0) };
+      lbrace   => { push(:lbrace, ts, te) };
+      rbrace   => { push(:rbrace, ts, te) };
+      lparen   => { push(:lparen, ts, te) };
+      rparen   => { push(:rparen, ts, te) };
+      smcolon  => { push(:smcolon, ts, te); increment(:lineno) };
+      newline  => { push(k = :newline, ts, te); increment(:lineno) };
 
-      var => { push(:any, data, ts, te) };
-      symbol => { push(:any, data, ts, te) };
-      ^alnum => { push(:any, data, ts, te) };
+      ^alnum => { push(:any, ts, te) };
+      var => { push(:any, ts, te) };
+      symbol => { push(:any, ts, te) };
 
-      space+ => { push(:space, data, ts, te) };
-      #any    => { push(:any, data, ts, te) };
+      (' '+)  => { push(:space, ts, te) };
+      #any    => { push(:any, ts, te) };
   *|;
 
 }%%
@@ -67,8 +73,9 @@ module Sourcify
         def process(data)
           begin
             @tokens = []
+            @lineno = 1
             @counters = {0 => Counter.new, 1 => Counter.new}
-            data = data.unpack("c*") if data.is_a?(String)
+            @data = data = data.unpack("c*") if data.is_a?(String)
             eof = data.length
 
             %% write init;
@@ -76,23 +83,32 @@ module Sourcify
 
             {
               :tokens => @tokens,
-              :counters => @counters
+              :counters => @counters,
+              :lineno => @lineno
             }
           rescue Escape
             @tokens
           end
         end
 
-        def push(key, data, ts, te)
-          @tokens << [key, data[ts .. te.pred].pack('c*')]
+        def push(key, ts, te)
+          @tokens << [key, @data[ts .. te.pred].pack('c*')]
         end
 
-        def increment(type, key)
-          @counters[key].increment
+        def increment(type, key = nil)
+          case type
+          when :lineno then @lineno += 1
+          else
+            unless @counters[key.zero? ? 1 : 0].started?
+              @counters[key].increment
+            end
+          end
         end
 
-        def decrement(type, key)
-          @counters[key].decrement
+        def decrement(type, key = nil)
+          unless @counters[key.zero? ? 1 : 0].started?
+            @counters[key].decrement
+          end
         end
 
         class Counter
@@ -113,11 +129,10 @@ if $0 == __FILE__
   require 'rubygems'
   require 'bacon'
   Bacon.summary_on_exit
+  process = Sourcify::Proc::Ragel.method(:process)
 
   %w{do end class module def begin case if unless while until for}.each do |kw|
     describe "Proc machine handling keyword '#{kw}'" do
-
-      process = Sourcify::Proc::Ragel.method(:process)
 
       [
         "#{kw}", " #{kw}", "#{kw} ", " #{kw} ",
@@ -153,6 +168,30 @@ if $0 == __FILE__
       end
 
     end
+  end
+
+  describe "Proc machine handling newlining" do
+
+    should "handle newline" do
+      process.call("
+        hello
+        world
+      ")[:lineno].should.equal(4)
+    end
+
+    should "handle escaped newline" do
+      process.call("
+        hello \
+        world
+      ")[:lineno].should.equal(3)
+    end
+
+    should "handle semi-colon" do
+      process.call("
+        hello; world
+      ")[:lineno].should.equal(4)
+    end
+
   end
 
 
