@@ -37,32 +37,32 @@ module Sourcify
 
   main := |*
 
-      kw_do => { push(k = :kw_do, ts, te); increment(k,0) };
-      kw_end => { push(k = :kw_end, ts, te); decrement(k,0) };
-      kw_class => { push(k = :kw_class, ts, te); increment(k,0) };
-      kw_module => { push(k = :kw_module, ts, te); increment(k,0) };
-      kw_def => { push(k = :kw_def, ts, te); increment(k,0) };
-      kw_while => { push(k = :kw_while, ts, te); increment(k,0) };
-      kw_until => { push(k = :kw_until, ts, te); increment(k,0) };
-      kw_begin => { push(k = :kw_begin, ts, te); increment(k,0) };
-      kw_case => { push(k = :kw_case, ts, te); increment(k,0) };
-      kw_for => { push(k = :kw_for, ts, te); increment(k,0) };
-      kw_if => { push(k = :kw_if, ts, te); increment(k,0) };
-      kw_unless => { push(k = :kw_unless, ts, te); increment(k,0) };
+    kw_do => { push(k = :kw_do, ts, te); increment(k,0) };
+    kw_end => { push(k = :kw_end, ts, te); decrement(k,0) };
+    kw_class => { push(k = :kw_class, ts, te); increment(k,0) };
+    kw_module => { push(k = :kw_module, ts, te); increment(k,0) };
+    kw_def => { push(k = :kw_def, ts, te); increment(k,0) };
+    kw_while => { push(k = :kw_while, ts, te); increment(k,0) };
+    kw_until => { push(k = :kw_until, ts, te); increment(k,0) };
+    kw_begin => { push(k = :kw_begin, ts, te); increment(k,0) };
+    kw_case => { push(k = :kw_case, ts, te); increment(k,0) };
+    kw_for => { push(k = :kw_for, ts, te); increment(k,0) };
+    kw_if => { push(k = :kw_if, ts, te); increment(k,0) };
+    kw_unless => { push(k = :kw_unless, ts, te); increment(k,0) };
 
-      lbrace   => { push(:lbrace, ts, te) };
-      rbrace   => { push(:rbrace, ts, te) };
-      lparen   => { push(:lparen, ts, te) };
-      rparen   => { push(:rparen, ts, te) };
-      smcolon  => { push(:smcolon, ts, te); increment(:lineno) };
-      newline  => { push(k = :newline, ts, te); increment(:lineno) };
+    lbrace   => { push(:lbrace, ts, te) };
+    rbrace   => { push(:rbrace, ts, te) };
+    lparen   => { push(:lparen, ts, te) };
+    rparen   => { push(:rparen, ts, te) };
+    smcolon  => { push(:smcolon, ts, te); increment(:lineno) };
+    newline  => { push(k = :newline, ts, te); increment(:lineno) };
 
-      ^alnum => { push(:any, ts, te) };
-      var => { push(:any, ts, te) };
-      symbol => { push(:any, ts, te) };
+    ^alnum => { push(:any, ts, te) };
+    var => { push(:any, ts, te) };
+    symbol => { push(:any, ts, te) };
 
-      (' '+)  => { push(:space, ts, te) };
-      #any    => { push(:any, ts, te) };
+    (' '+)  => { push(:space, ts, te) };
+    #any    => { push(:any, ts, te) };
   *|;
 
 }%%
