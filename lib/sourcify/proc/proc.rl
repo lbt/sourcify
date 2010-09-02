@@ -19,14 +19,11 @@ module Sourcify
   kw_class      = 'class';
   kw_module     = 'module';
   kw_def        = 'def';
-  kw_while_do   = '';
-  kw_for_do     = '';
-  kw_until_do   = '';
 
   lbrace        = '{';
   rbrace        = '}';
-#  lparen        = '(';
-#  rparen        = ')';
+  lparen        = '(';
+  rparen        = ')';
 #  lbracket      = '[';
 #  rbracket      = ']';
 
@@ -40,6 +37,8 @@ module Sourcify
 
       lbrace   => { emit(:lbrace, data, ts, te) };
       rbrace   => { emit(:rbrace, data, ts, te) };
+      lparen   => { emit(:lparen, data, ts, te) };
+      rparen   => { emit(:rparen, data, ts, te) };
 
       kw_do => { emit(:kw_do, data, ts, te) };
       kw_end => { emit(:kw_end, data, ts, te) };
@@ -58,10 +57,6 @@ module Sourcify
       symbol => { emit(:any, data, ts, te) };
       ^alnum => { emit(:any, data, ts, te) };
 
-#      lparen   => { emit(:lparen, data, ts, te) };
-#      rparen   => { emit(:rparen, data, ts, te) };
-#      lbracket => { emit(:any, data, ts, te) };
-#      rbracket => { emit(:any, data, ts, te) };
 
       space+ => { emit(:space, data, ts, te) };
       #any    => { emit(:any, data, ts, te) };
