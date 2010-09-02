@@ -24,8 +24,6 @@ module Sourcify
   rbrace        = '}';
   lparen        = '(';
   rparen        = ')';
-#  lbracket      = '[';
-#  rbracket      = ']';
 
   var           = [a-z_][a-zA-Z0-9_]*;
   symbol        = ':' . var;
@@ -35,31 +33,30 @@ module Sourcify
 
   main := |*
 
-      lbrace   => { emit(:lbrace, data, ts, te) };
-      rbrace   => { emit(:rbrace, data, ts, te) };
-      lparen   => { emit(:lparen, data, ts, te) };
-      rparen   => { emit(:rparen, data, ts, te) };
+      lbrace   => { push(:lbrace, data, ts, te) };
+      rbrace   => { push(:rbrace, data, ts, te) };
+      lparen   => { push(:lparen, data, ts, te) };
+      rparen   => { push(:rparen, data, ts, te) };
 
-      kw_do => { emit(:kw_do, data, ts, te) };
-      kw_end => { emit(:kw_end, data, ts, te) };
-      kw_class => { emit(:kw_class, data, ts, te) };
-      kw_module => { emit(:kw_module, data, ts, te) };
-      kw_def => { emit(:kw_def, data, ts, te) };
-      kw_while => { emit(:kw_while, data, ts, te) };
-      kw_until => { emit(:kw_until, data, ts, te) };
-      kw_begin => { emit(:kw_begin, data, ts, te) };
-      kw_case => { emit(:kw_case, data, ts, te) };
-      kw_for => { emit(:kw_for, data, ts, te) };
-      kw_if => { emit(:kw_if, data, ts, te) };
-      kw_unless => { emit(:kw_unless, data, ts, te) };
+      kw_do => { push(k = :kw_do, data, ts, te); increment(k,0) };
+      kw_end => { push(k = :kw_end, data, ts, te); decrement(k,0) };
+      kw_class => { push(k = :kw_class, data, ts, te); increment(k,0) };
+      kw_module => { push(k = :kw_module, data, ts, te); increment(k,0) };
+      kw_def => { push(k = :kw_def, data, ts, te); increment(k,0) };
+      kw_while => { push(k = :kw_while, data, ts, te); increment(k,0) };
+      kw_until => { push(k = :kw_until, data, ts, te); increment(k,0) };
+      kw_begin => { push(k = :kw_begin, data, ts, te); increment(k,0) };
+      kw_case => { push(k = :kw_case, data, ts, te); increment(k,0) };
+      kw_for => { push(k = :kw_for, data, ts, te); increment(k,0) };
+      kw_if => { push(k = :kw_if, data, ts, te); increment(k,0) };
+      kw_unless => { push(k = :kw_unless, data, ts, te); increment(k,0) };
 
-      var => { emit(:any, data, ts, te) };
-      symbol => { emit(:any, data, ts, te) };
-      ^alnum => { emit(:any, data, ts, te) };
+      var => { push(:any, data, ts, te) };
+      symbol => { push(:any, data, ts, te) };
+      ^alnum => { push(:any, data, ts, te) };
 
-
-      space+ => { emit(:space, data, ts, te) };
-      #any    => { emit(:any, data, ts, te) };
+      space+ => { push(:space, data, ts, te) };
+      #any    => { push(:any, data, ts, te) };
   *|;
 
 }%%
@@ -69,19 +66,41 @@ module Sourcify
 
         def process(data)
           begin
+            @tokens = []
+            @counters = {0 => Counter.new, 1 => Counter.new}
             data = data.unpack("c*") if data.is_a?(String)
             eof = data.length
-            @tokens = []
+
             %% write init;
             %% write exec;
-            @tokens
+
+            {
+              :tokens => @tokens,
+              :counters => @counters
+            }
           rescue Escape
             @tokens
           end
         end
 
-        def emit(key, data, ts, te)
+        def push(key, data, ts, te)
           @tokens << [key, data[ts .. te.pred].pack('c*')]
+        end
+
+        def increment(type, key)
+          @counters[key].increment
+        end
+
+        def decrement(type, key)
+          @counters[key].decrement
+        end
+
+        class Counter
+          attr_reader    :count
+          def initialize ; @count = 0      ; end
+          def started?   ; @count.nonzero? ; end
+          def increment  ; @count += 1     ; end
+          def decrement  ; @count -= 1     ; end
         end
 
       end
@@ -98,6 +117,8 @@ if $0 == __FILE__
   %w{do end class module def begin case if unless while until for}.each do |kw|
     describe "Proc machine handling keyword '#{kw}'" do
 
+      process = Sourcify::Proc::Ragel.method(:process)
+
       [
         "#{kw}", " #{kw}", "#{kw} ", " #{kw} ",
         "#{kw}\n", " #{kw}\n",
@@ -111,7 +132,9 @@ if $0 == __FILE__
         "#{kw}[", " #{kw}[",
       ].each do |frag|
         should "handle '#{frag}'" do
-          Sourcify::Proc::Ragel.process(frag).should.include([:"kw_#{kw}", kw])
+          result = process.call(frag)
+          result[:tokens].should.include([:"kw_#{kw}", kw])
+          result[:counters][0].count.should.equal(kw == 'end' ? -1 : 1)
         end
       end
 
@@ -123,7 +146,9 @@ if $0 == __FILE__
         "#{kw}_", " #{kw}_",
       ].each do |frag|
         should "not handle '#{frag}'" do
-          Sourcify::Proc::Ragel.process(frag).should.not.include([:"kw_#{kw}", kw])
+          result = process.call(frag)
+          result[:tokens].should.not.include([:"kw_#{kw}", kw])
+          result[:counters][0].count.should.equal(0)
         end
       end
 
