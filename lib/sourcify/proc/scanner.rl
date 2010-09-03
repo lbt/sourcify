@@ -1,8 +1,6 @@
 module Sourcify
   module Proc
-    module Scanner
-
-      class Escape < Exception; end
+    module Scanner #:nodoc:all
 
 %%{
   machine proc;
@@ -68,18 +66,24 @@ module Sourcify
 
       class << self
 
+        class Escape < Exception; end
+
         def process(data)
           begin
             reset_collectibles
             @results, @lineno = [], 1
-            @data = data = data.unpack("c*") if data.is_a?(String)
-            eof = data.length
-
-            %% write init;
-            %% write exec;
+            @data = data.unpack("c*") if data.is_a?(String)
+            execute!
           rescue Escape
             @results
           end
+        end
+
+        def execute!
+          data = @data
+          eof = data.length
+          %% write init;
+          %% write exec;
         end
 
         def push(key, ts, te)
@@ -106,7 +110,7 @@ module Sourcify
           when :do_block_nstart2 then @do_end_counter.increment(0..1)
           when :do_block_start
             unless @do_end_counter.started?
-              @lineno = 1 # JRuby has lineno bug (see http://jira.codehaus.org/browse/JRUBY-5014)
+              @lineno = 1 # Fixing JRuby's lineno bug (see http://jira.codehaus.org/browse/JRUBY-5014)
               last = @tokens[-1]
               @tokens.clear
               @tokens << last
