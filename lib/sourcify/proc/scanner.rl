@@ -1,6 +1,6 @@
 module Sourcify
   module Proc
-    module Ragel
+    module Scanner
 
       class Escape < Exception; end
 
