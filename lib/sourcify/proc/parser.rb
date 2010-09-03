@@ -71,28 +71,6 @@ module Sourcify
           include File::Tail
         end
 
-#        def raw_source_frags
-#          # NOTE: Retrying is needed because of the bug at
-#          # http://redmine.ruby-lang.org/issues/show/3765, and because i have yet
-#          # to find a foolproof one-time solution that doesn't require retrying
-#          retried = false
-#          begin
-#            Sourcify::Proc::Lexer.new(raw_source_io(retried), @file, @line).
-#              work.select{|frag| eval('proc ' + frag).arity == @arity }
-#          rescue SyntaxError, TypeError, NoMethodError
-#            retried ? raise(LexerInternalError) : (retried = true; retry)
-#          end
-#        end
-#
-#        def raw_source_io(retrying)
-#          File.open(@file, 'r') do |fh|
-#            fh.extend(File::Tail).forward(@line.pred)
-#            lines = fh.readlines
-#            lines[0].sub!(%r{^.*?((?:do|\{).*)$}m,'\1') if retrying
-#            StringIO.new(lines.join, 'r')
-#          end
-#        end
-#
     end
   end
 end
