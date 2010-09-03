@@ -88,6 +88,7 @@ module Sourcify
 
         def increment_line
           @lineno += 1
+          raise Escape if @lineno > 1 && !@results.empty?
         end
 
         def increment(type, key)
@@ -100,32 +101,44 @@ module Sourcify
 
         def increment_do_end_counter(type)
           return if @brace_counter.started?
+          puts '', 'brace_counter not staretd'
           case type
-          when :do_end_nstart1 then @do_end_counter.increment
-          when :do_end_nstart2 then @do_end_counter.increment(0..1)
-          when :do_end_start
+          when :do_block_nstart1 then @do_end_counter.increment
+          when :do_block_nstart2 then @do_end_counter.increment(0..1)
+          when :do_block_start
+          puts '', 'inside do_block_start'
             unless @do_end_counter.started?
+              puts '', 'starting do_end_counter'
               @lineno = 1 # JRuby has lineno bug (see http://jira.codehaus.org/browse/JRUBY-5014)
+              p @tokens
               last = @tokens[-1]
               @tokens.clear
               @tokens << last
+              p @tokens
             end
             @do_end_counter.increment
+            p @do_end_counter.counts
           end
         end
 
         def decrement_do_end_counter
-          return if @brace_counter.started?
+          return unless @do_end_counter.started?
           @do_end_counter.decrement
+          puts '', 'insode decrement_do_end_counter'
+          p @do_end_counter.counts
+          puts @do_end_counter.balanced?
           construct_result_code if @do_end_counter.balanced?
         end
 
         def construct_result_code
           begin
             code = 'proc ' + @tokens.map(&:last).join
+            p @tokens
+            puts '', 'construct_result_code = %s' % code
             eval(code) # TODO: is there a better way to check for SyntaxError ?
             @results << code
             raise Escape unless @lineno == 1
+            puts @lineno
             reset_collectibles
           rescue SyntaxError
           end
@@ -139,21 +152,22 @@ module Sourcify
 
         class Counter
 
+          attr_reader :counts
+
           def initialize
             @counts = [0,0]
           end
 
           def started?
-            @counts.any(&:nonzero?)
+            @counts.any?(&:nonzero?)
           end
 
           def balanced?
-            @counts.any(&:zero?)
+            @counts.any?(&:zero?)
           end
 
           def decrement
-            @counts[0] -= 1
-            @counts[1] -= 1
+            (0..1).each{|i| @counts[i] -= 1 unless @counts[i].zero? }
           end
 
           def increment(val = 1)
@@ -161,8 +175,7 @@ module Sourcify
               @counts[0] += val.first
               @counts[1] += val.last
             else
-              @counts[0] += 1
-              @counts[0] += 1
+              (0..1).each{|i| @counts[i] += 1 }
             end
           end
 
@@ -173,132 +186,132 @@ module Sourcify
     end
   end
 end
-#
-#if $0 == __FILE__
-#  require 'rubygems'
-#  require 'bacon'
-#  Bacon.summary_on_exit
-#  process = Sourcify::Proc::Ragel.method(:process)
-#
-#  %w{while until if unless}.each do |kw|
-#    describe "Proc machine handling if-like keyword (#{kw})" do
-#
-#      class << self
-#        def should_handle_as_block_like(str)
-#          tokens = Sourcify::Proc::Ragel.process(str)[:tokens].map(&:first)
-#          tokens.should.not.include(:kw_modifier)
-#          tokens.should.include(:"kw_for")
-#        end
-#        def should_handle_as_modifier(str)
-#          tokens = Sourcify::Proc::Ragel.process(str)[:tokens].map(&:first)
-#          tokens.should.include(:kw_modifier)
-#          tokens.should.not.include(:"kw_if")
-#          tokens.should.not.include(:"kw_for")
-#        end
-#      end
-#
-#    end
-#  end
-#
-#  %w{while until for}.each do |kw|
-#    describe "Proc machine handling for-like keyword (#{kw})" do
-#
-#      class << self
-#        def should_handle_as_block_like(str)
-#          tokens = Sourcify::Proc::Ragel.process(str)[:tokens].map(&:first)
-#          tokens.should.not.include(:kw_modifier)
-#          tokens.should.include(:"kw_for")
-#        end
-#        def should_handle_as_modifier(str)
-#          tokens = Sourcify::Proc::Ragel.process(str)[:tokens].map(&:first)
-#          tokens.should.include(:kw_modifier)
-#          tokens.should.not.include(:"kw_if")
-#          tokens.should.not.include(:"kw_for")
-#        end
-#      end
-#
-#      should "handle ... #{kw} ... as modifier" do
-#        should_handle_as_modifier("
-#          x = 1 #{kw} true
-#        ")
-#      end
-#
-#      should "handle ... (... #{kw} ...) as modifier" do
-#        should_handle_as_modifier("
-#          y = (x = 1 #{kw} true)
-#        ")
-#      end
-#
-#      should "handle ...; ... #{kw} ... as modifier" do
-#        should_handle_as_modifier("
-#          y = 2; x = 1 #{kw} true
-#        ")
-#      end
-#
-#      should "handle #{kw} ... as block-like" do
-#        should_handle_as_block_like("
-#          #{kw} true do x = 1 end
-#        ")
-#      end
-#
-#      should "handle ... (#{kw} ...) as block-like" do
-#        should_handle_as_block_like("
-#          y = (#{kw} true do x = 1 end)
-#        ")
-#      end
-#
-#      should "handle ...; #{kw} ... as block-like" do
-#        should_handle_as_block_like("
-#          y = 2; #{kw} true do x = 1 end
-#        ")
-#      end
-#
-#      should "handle #{kw} ... \\n as block-like" do
-#        should_handle_as_block_like("
-#          #{kw} true
-#            x = 1
-#          end
-#        ")
-#      end
-#
-#      should "handle ... (#{kw} ... \\n ...) as block-like" do
-#        should_handle_as_block_like("
-#          y = (#{kw} true
-#              x = 1
-#            end
-#          )
-#        ")
-#      end
-#
-#      should "handle ...; #{kw} ... \\n ... as block like" do
-#        should_handle_as_block_like("
-#          y = 2; #{kw} true
-#              x = 1
-#            end
-#        ")
-#      end
-#
-#      should "handle #{kw} ...; ... as block-like" do
-#        should_handle_as_block_like("
-#          #{kw} true; x = 1; end
-#        ")
-#      end
-#
-#      should "handle ... (#{kw} ...; ...) as block-like" do
-#        should_handle_as_block_like("
-#          y = (#{kw} true; x = 1; end)
-#        ")
-#      end
-#
-#      should "handle ...; #{kw} ...; ... as block-like" do
-#        should_handle_as_block_like("
-#          y = 2; #{kw} true; x = 1; end
-#        ")
-#      end
-#
-#    end
-#  end
-#
+
+if $0 == __FILE__
+  require 'rubygems'
+  require 'bacon'
+  Bacon.summary_on_exit
+  process = Sourcify::Proc::Scanner.method(:process)
+
+  %w{while until if unless}.each do |kw|
+    describe "Proc machine handling if-like keyword (#{kw})" do
+
+      class << self
+        def should_handle_as_block_like(str)
+          tokens = Sourcify::Proc::Scanner.process(str)[:tokens].map(&:first)
+          tokens.should.not.include(:kw_modifier)
+          tokens.should.include(:"kw_for")
+        end
+        def should_handle_as_modifier(str)
+          tokens = Sourcify::Proc::Scanner.process(str)[:tokens].map(&:first)
+          tokens.should.include(:kw_modifier)
+          tokens.should.not.include(:"kw_if")
+          tokens.should.not.include(:"kw_for")
+        end
+      end
+
+    end
+  end
+
+  %w{while until for}.each do |kw|
+    describe "Proc machine handling for-like keyword (#{kw})" do
+
+      class << self
+        def should_handle_as_block_like(str)
+          tokens = Sourcify::Proc::Scanner.process(str)[:tokens].map(&:first)
+          tokens.should.not.include(:kw_modifier)
+          tokens.should.include(:"kw_for")
+        end
+        def should_handle_as_modifier(str)
+          tokens = Sourcify::Proc::Scanner.process(str)[:tokens].map(&:first)
+          tokens.should.include(:kw_modifier)
+          tokens.should.not.include(:"kw_if")
+          tokens.should.not.include(:"kw_for")
+        end
+      end
+
+      should "handle ... #{kw} ... as modifier" do
+        should_handle_as_modifier("
+          x = 1 #{kw} true
+        ")
+      end
+
+      should "handle ... (... #{kw} ...) as modifier" do
+        should_handle_as_modifier("
+          y = (x = 1 #{kw} true)
+        ")
+      end
+
+      should "handle ...; ... #{kw} ... as modifier" do
+        should_handle_as_modifier("
+          y = 2; x = 1 #{kw} true
+        ")
+      end
+
+      should "handle #{kw} ... as block-like" do
+        should_handle_as_block_like("
+          #{kw} true do x = 1 end
+        ")
+      end
+
+      should "handle ... (#{kw} ...) as block-like" do
+        should_handle_as_block_like("
+          y = (#{kw} true do x = 1 end)
+        ")
+      end
+
+      should "handle ...; #{kw} ... as block-like" do
+        should_handle_as_block_like("
+          y = 2; #{kw} true do x = 1 end
+        ")
+      end
+
+      should "handle #{kw} ... \\n as block-like" do
+        should_handle_as_block_like("
+          #{kw} true
+            x = 1
+          end
+        ")
+      end
+
+      should "handle ... (#{kw} ... \\n ...) as block-like" do
+        should_handle_as_block_like("
+          y = (#{kw} true
+              x = 1
+            end
+          )
+        ")
+      end
+
+      should "handle ...; #{kw} ... \\n ... as block like" do
+        should_handle_as_block_like("
+          y = 2; #{kw} true
+              x = 1
+            end
+        ")
+      end
+
+      should "handle #{kw} ...; ... as block-like" do
+        should_handle_as_block_like("
+          #{kw} true; x = 1; end
+        ")
+      end
+
+      should "handle ... (#{kw} ...; ...) as block-like" do
+        should_handle_as_block_like("
+          y = (#{kw} true; x = 1; end)
+        ")
+      end
+
+      should "handle ...; #{kw} ...; ... as block-like" do
+        should_handle_as_block_like("
+          y = 2; #{kw} true; x = 1; end
+        ")
+      end
+
+    end
+  end
+
 #  %w{do end class module def begin case}.each do |kw|
 #    describe "Proc machine handling keyword '#{kw}'" do
 #
@@ -361,67 +374,67 @@ end
 #    end
 #
 #  end
+
+
+#  describe "Proc machine handling symbol" do
 #
+#    [
+#      ":aa", ":aa ", " :aa", " :aa ",
+#      ":aa\n", " :aa\n", "\n:aa", "\n:aa ", "\n:aa\n",
+#    ].each do |frag|
+#      should "handle '#{frag}'" do
+#        Sourcify::Proc::Scanner.process(frag).should.include([:symbol, ":aa"])
+#      end
+#    end
 #
-##  describe "Proc machine handling symbol" do
-##
-##    [
-##      ":aa", ":aa ", " :aa", " :aa ",
-##      ":aa\n", " :aa\n", "\n:aa", "\n:aa ", "\n:aa\n",
-##    ].each do |frag|
-##      should "handle '#{frag}'" do
-##        Sourcify::Proc::Ragel.process(frag).should.include([:symbol, ":aa"])
-##      end
-##    end
-##
-##    [
-##      ":~", ":`", ":%", ":^", ":&", ":*", ":-", ":+", ":_", ":/", ":<", ":>", ":|",
-##      ":@aa", ":@@aa", ":$aa",
-##    ].each do |frag|
-##      should "handle '#{frag}'" do
-##        Sourcify::Proc::Ragel.process(frag).should.include([:symbol, frag])
-##      end
-##    end
-##
-##    [
-##      ":!", ":@", ":#", ":$", ":(", ":)", ":=", ":\\", ":{", ":}",
-##      ":[", ":]", "::", ":;", ':"', ":'", ":?", ":,", ":."
-##    ].each do |frag|
-##      should "not handle '#{frag}'" do
-##        Sourcify::Proc::Ragel.process(frag).should.not.include([:symbol, frag])
-##      end
-##    end
-##
-##  end
-##
-##  describe "Proc machine handling namespace" do
-##
-##    ['::', ':::'].each do |frag|
-##      should "handle '#{frag}'" do
-##        Sourcify::Proc::Ragel.process(frag).should.include([:any, '::'])
-##      end
-##    end
-##
-##    should "not handle ':'" do
-##      Sourcify::Proc::Ragel.process(frag).should.not.include([:any, '::'])
-##    end
-##
-##  end
+#    [
+#      ":~", ":`", ":%", ":^", ":&", ":*", ":-", ":+", ":_", ":/", ":<", ":>", ":|",
+#      ":@aa", ":@@aa", ":$aa",
+#    ].each do |frag|
+#      should "handle '#{frag}'" do
+#        Sourcify::Proc::Scanner.process(frag).should.include([:symbol, frag])
+#      end
+#    end
 #
-##      [
-##        ":#{kw}", ":#{kw} ",
-##        "a#{kw}", "a#{kw} ",
-##        "#{kw}a", " #{kw}a",
-##        "_#{kw}", "_#{kw} ",
-##        "#{kw}_", " #{kw}_",
-##      ].each do |frag|
-##        should "not handle '#{frag}'" do
-##          Sourcify::Proc::Ragel.process(frag).should.not.include([:"kw_#{kw}", kw])
-##        end
-##      end
-##
-##    end
-##  end
+#    [
+#      ":!", ":@", ":#", ":$", ":(", ":)", ":=", ":\\", ":{", ":}",
+#      ":[", ":]", "::", ":;", ':"', ":'", ":?", ":,", ":."
+#    ].each do |frag|
+#      should "not handle '#{frag}'" do
+#        Sourcify::Proc::Scanner.process(frag).should.not.include([:symbol, frag])
+#      end
+#    end
 #
+#  end
 #
-#end
+#  describe "Proc machine handling namespace" do
+#
+#    ['::', ':::'].each do |frag|
+#      should "handle '#{frag}'" do
+#        Sourcify::Proc::Scanner.process(frag).should.include([:any, '::'])
+#      end
+#    end
+#
+#    should "not handle ':'" do
+#      Sourcify::Proc::Scanner.process(frag).should.not.include([:any, '::'])
+#    end
+#
+#  end
+
+#      [
+#        ":#{kw}", ":#{kw} ",
+#        "a#{kw}", "a#{kw} ",
+#        "#{kw}a", " #{kw}a",
+#        "_#{kw}", "_#{kw} ",
+#        "#{kw}_", " #{kw}_",
+#      ].each do |frag|
+#        should "not handle '#{frag}'" do
+#          Sourcify::Proc::Scanner.process(frag).should.not.include([:"kw_#{kw}", kw])
+#        end
+#      end
+#
+#    end
+#  end
+
+
+end
