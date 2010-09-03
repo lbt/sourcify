@@ -34,10 +34,10 @@ module Sourcify
   assoc         = '=>';
   assgn         = '=';
   smcolon       = ';';
+  spaces        = ' '*;
 
-  expr_start    = (lparen | newline | smcolon) . space*;
-  expr_while_do = expr_start . kw_while . (!newline & !smcolon)+ . kw_do;
-  expr_while    = expr_start . kw_while . (^newline & ^smcolon & !kw_do)+ . space* . (newline | smcolon);
+  while_block = (newline | smcolon | lparen) . spaces . (kw_if | kw_unless | kw_while | kw_until);
+  while_modifier = (kw_if | kw_unless | kw_while | kw_until);
 
   main := |*
 
@@ -46,16 +46,12 @@ module Sourcify
     kw_class => { push(k = :kw_class, ts, te); increment(k,0) };
     kw_module => { push(k = :kw_module, ts, te); increment(k,0) };
     kw_def => { push(k = :kw_def, ts, te); increment(k,0) };
-    kw_while => { push(k = :kw_while, ts, te); increment(k,0) };
-    kw_until => { push(k = :kw_until, ts, te); increment(k,0) };
     kw_begin => { push(k = :kw_begin, ts, te); increment(k,0) };
     kw_case => { push(k = :kw_case, ts, te); increment(k,0) };
     kw_for => { push(k = :kw_for, ts, te); increment(k,0) };
-    kw_if => { push(k = :kw_if, ts, te); increment(k,0) };
-    kw_unless => { push(k = :kw_unless, ts, te); increment(k,0) };
 
-    expr_while_do => { push(k = :kw_while, ts, te); increment(k,0) };
-    # expr_while => { push(k = :kw_while, ts, te); increment(k,0) };
+    while_block => { push(k = :kw_while, ts, te); increment(k,0) };
+    while_modifier => { push(k = :kw_modifier, ts, te); };
 
     lbrace   => { push(:lbrace, ts, te) };
     rbrace   => { push(:rbrace, ts, te) };
@@ -69,7 +65,7 @@ module Sourcify
     symbol => { push(:any, ts, te) };
 
     (' '+)  => { push(:space, ts, te) };
-    #any    => { push(:any, ts, te) };
+    any    => { push(:any, ts, te) };
   *|;
 
 }%%
@@ -139,158 +135,158 @@ if $0 == __FILE__
   process = Sourcify::Proc::Ragel.method(:process)
 
   %w{while}.each do |kw|
-    describe "Proc machine handling the troublesome #{kw}" do
+    describe "Proc machine handling '#{kw}' as modifier" do
 
-      should "handle #{kw} ... do (w do)" do
-        tokens = process.call("
+      class << self
+        def tokens(str); Sourcify::Proc::Ragel.process(str)[:tokens].map(&:first);          end
+        def should_not_include_modifier(str); tokens(str).should.not.include(:kw_modifier); end
+        def should_include_modifier(str);     tokens(str).should.include(:kw_modifier);     end
+      end
+
+      should "handle ... #{kw} ..." do
+        should_include_modifier("
+          x = 1 #{kw} true
+        ")
+      end
+
+      should "handle ... (... #{kw} ...)" do
+        should_include_modifier("
+          y = (x = 1 #{kw} true)
+        ")
+      end
+
+      should "handle ...; ... #{kw} ..." do
+        should_include_modifier("
+          y = 2; x = 1 #{kw} true
+        ")
+      end
+
+      should "not handle #{kw} ..." do
+        should_not_include_modifier("
           #{kw} true do x = 1 end
-        ")[:tokens]
-        p tokens
-        tokens.should.include([:"kw_#{kw}", "\n          #{kw} true do"])
+        ")
       end
 
-      should "handle ... (#{kw} ... do) (w do)" do
-        tokens = process.call("
+      should "not handle ... (#{kw} ...)" do
+        should_not_include_modifier("
           y = (#{kw} true do x = 1 end)
-        ")[:tokens]
-        p tokens
-        tokens.should.include([:"kw_#{kw}", "(#{kw} true do"])
+        ")
       end
 
-      should "handle ...; #{kw} ... do (w do)" do
-        tokens = process.call("
+      should "not handle ...; #{kw} ..." do
+        should_not_include_modifier("
           y = 2; #{kw} true do x = 1 end
-        ")[:tokens]
-        p tokens
-        tokens.should.include([:"kw_#{kw}", "; #{kw} true do"])
+        ")
       end
 
-      should "handle #{kw} ... \\n (wo do)" do
-        process.call("
+      should "not handle #{kw} ... \\n" do
+        should_not_include_modifier("
           #{kw} true
             x = 1
           end
-        ")[:tokens].should.include([:"kw_#{kw}", "#{kw} true\n"])
+        ")
       end
 
-      should "handle ... (#{kw} ... \\n ...) (wo do)" do
-        process.call("
+      should "not handle ... (#{kw} ... \\n ...)" do
+        should_not_include_modifier("
           y = (#{kw} true
               x = 1
             end
           )
-        ")[:tokens].should.include([:"kw_#{kw}", "(#{kw} true\n"])
+        ")
       end
 
-      should "handle ...; #{kw} ... \\n ... (wo do)" do
-        process.call("
+      should "not handle ...; #{kw} ... \\n ..." do
+        should_not_include_modifier("
           y = 2; #{kw} true
               x = 1
             end
-        ")[:tokens].should.include([:"kw_#{kw}", "; #{kw} true\n"])
+        ")
       end
 
-      should "handle #{kw} ...; ... (wo do)" do
-        process.call("
+      should "not handle #{kw} ...; ..." do
+        should_not_include_modifier("
           #{kw} true; x = 1; end
-        ")[:tokens].should.include([:"kw_#{kw}", "#{kw} true;"])
+        ")
       end
 
-      should "handle ... (#{kw} ...; ...) (wo do)" do
-        process.call("
+      should "not handle ... (#{kw} ...; ...)" do
+        should_not_include_modifier("
           y = (#{kw} true; x = 1; end)
-        ")[:tokens].should.include([:"kw_#{kw}", "#{kw} true;"])
+        ")
       end
 
-      should "handle ...; #{kw} ...; ... (wo do)" do
-        process.call("
+      should "not handle ...; #{kw} ...; ..." do
+        should_not_include_modifier("
           y = 2; #{kw} true; x = 1; end
-        ")[:tokens].should.include([:"kw_#{kw}", "; #{kw} true;"])
-      end
-
-      should "handle ... #{kw} ... (as modifier)" do
-        process.call("
-          x = 1 #{kw} true
-        ")[:tokens].should.include([:"kw_#{kw}", "\n          x = 1 #{kw}"])
-      end
-
-      should "handle ... (... #{kw} ...) (as modifier)" do
-        process.call("
-          y = (x = 1 #{kw} true)
-        ")[:tokens].should.include([:"kw_#{kw}", "(x = 1 #{kw}"])
-      end
-
-      should "handle ...; ... #{kw} ... (as modifier)" do
-        process.call("
-          y = 2; x = 1 #{kw} true
-        ")[:tokens].should.include([:"kw_#{kw}", "; x = 1 #{kw}"])
+        ")
       end
 
     end
   end
 
-#  %w{do end class module def begin case if unless while until for}.each do |kw|
-#    describe "Proc machine handling keyword '#{kw}'" do
-#
-#      [
-#        "#{kw}", " #{kw}", "#{kw} ", " #{kw} ",
-#        "#{kw}\n", " #{kw}\n",
-#        "\n#{kw}", "\n#{kw} ",
-#        ")#{kw}", ")#{kw} ",
-#        "}#{kw}", "}#{kw} ",
-#        "]#{kw}", "]#{kw} ",
-#        "#{kw}|", " #{kw}|",
-#        "#{kw}(", " #{kw}(",
-#        "#{kw}{", " #{kw}{",
-#        "#{kw}[", " #{kw}[",
-#      ].each do |frag|
-#        should "handle '#{frag}'" do
-#          result = process.call(frag)
-#          result[:tokens].should.include([:"kw_#{kw}", kw])
-#          result[:counters][0].count.should.equal(kw == 'end' ? -1 : 1)
-#        end
-#      end
-#
-#      [
-#        ":#{kw}", ":#{kw} ",
-#        "a#{kw}", "a#{kw} ",
-#        "#{kw}a", " #{kw}a",
-#        "_#{kw}", "_#{kw} ",
-#        "#{kw}_", " #{kw}_",
-#      ].each do |frag|
-#        should "not handle '#{frag}'" do
-#          result = process.call(frag)
-#          result[:tokens].should.not.include([:"kw_#{kw}", kw])
-#          result[:counters][0].count.should.equal(0)
-#        end
-#      end
-#
-#    end
-#  end
+  %w{do end class module def begin case for}.each do |kw|
+    describe "Proc machine handling keyword '#{kw}'" do
 
-#  describe "Proc machine handling newlining" do
-#
-#    should "handle newline" do
-#      process.call("
-#        hello
-#        world
-#      ")[:lineno].should.equal(4)
-#    end
-#
-#    should "handle escaped newline" do
-#      process.call("
-#        hello \
-#        world
-#      ")[:lineno].should.equal(3)
-#    end
-#
-#    should "handle semi-colon" do
-#      process.call("
-#        hello; world
-#      ")[:lineno].should.equal(4)
-#    end
-#
-#  end
+      [
+        "#{kw}", " #{kw}", "#{kw} ", " #{kw} ",
+        "#{kw}\n", " #{kw}\n",
+        "\n#{kw}", "\n#{kw} ",
+        ")#{kw}", ")#{kw} ",
+        "}#{kw}", "}#{kw} ",
+        "]#{kw}", "]#{kw} ",
+        "#{kw}|", " #{kw}|",
+        "#{kw}(", " #{kw}(",
+        "#{kw}{", " #{kw}{",
+        "#{kw}[", " #{kw}[",
+      ].each do |frag|
+        should "handle '#{frag}'" do
+          result = process.call(frag)
+          result[:tokens].should.include([:"kw_#{kw}", kw])
+          result[:counters][0].count.should.equal(kw == 'end' ? -1 : 1)
+        end
+      end
+
+      [
+        ":#{kw}", ":#{kw} ",
+        "a#{kw}", "a#{kw} ",
+        "#{kw}a", " #{kw}a",
+        "_#{kw}", "_#{kw} ",
+        "#{kw}_", " #{kw}_",
+      ].each do |frag|
+        should "not handle '#{frag}'" do
+          result = process.call(frag)
+          result[:tokens].should.not.include([:"kw_#{kw}", kw])
+          result[:counters][0].count.should.equal(0)
+        end
+      end
+
+    end
+  end
+
+  describe "Proc machine handling newlining" do
+
+    should "handle newline" do
+      process.call("
+        hello
+        world
+      ")[:lineno].should.equal(4)
+    end
+
+    should "handle escaped newline" do
+      process.call("
+        hello \
+        world
+      ")[:lineno].should.equal(3)
+    end
+
+    should "handle semi-colon" do
+      process.call("
+        hello; world
+      ")[:lineno].should.equal(4)
+    end
+
+  end
 
 
 #  describe "Proc machine handling symbol" do
