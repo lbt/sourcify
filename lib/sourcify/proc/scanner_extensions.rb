@@ -7,9 +7,8 @@ module Sourcify
 
         def process(data)
           begin
-            reset_collectibles
-            @results, @lineno = [], 1
-            @data = data.unpack("c*")
+            @results, @data = [], data.unpack("c*")
+            reset_attributes
             execute!
           rescue Escape
             @results
@@ -22,7 +21,7 @@ module Sourcify
 
         def increment_line
           @lineno += 1
-          raise Escape if @lineno > 1 && !@results.empty?
+          raise Escape unless @results.empty?
         end
 
         def increment(type, key)
@@ -39,12 +38,7 @@ module Sourcify
           when :do_block_nstart1 then @do_end_counter.increment
           when :do_block_nstart2 then @do_end_counter.increment(0..1)
           when :do_block_start
-            unless @do_end_counter.started?
-              @lineno = 1 # Fixing JRuby's lineno bug (see http://jira.codehaus.org/browse/JRUBY-5014)
-              last = @tokens[-1]
-              @tokens.clear
-              @tokens << last
-            end
+            offset_attributes unless @do_end_counter.started?
             @do_end_counter.increment
           end
         end
@@ -55,21 +49,41 @@ module Sourcify
           construct_result_code if @do_end_counter.balanced?
         end
 
+        def increment_brace_counter(type)
+          return if @do_end_counter.started?
+          offset_attributes unless @brace_counter.started?
+          @brace_counter.increment
+        end
+
+        def decrement_brace_counter
+          return unless @brace_counter.started?
+          @brace_counter.decrement
+          construct_result_code if @brace_counter.balanced?
+        end
+
         def construct_result_code
           begin
             code = 'proc ' + @tokens.join
             eval(code) # TODO: is there a better way to check for SyntaxError ?
             @results << code
             raise Escape unless @lineno == 1
-            reset_collectibles
+            reset_attributes
           rescue SyntaxError
           end
         end
 
-        def reset_collectibles
+        def reset_attributes
           @tokens = []
+          @lineno = 1
           @do_end_counter = Counter.new
           @brace_counter = Counter.new
+        end
+
+        def offset_attributes
+          @lineno = 1 # Fixing JRuby's lineno bug (see http://jira.codehaus.org/browse/JRUBY-5014)
+          last = @tokens[-1]
+          @tokens.clear
+          @tokens << last
         end
 
         class Counter

@@ -27,6 +27,7 @@ module Sourcify
 
   var           = [a-z_][a-zA-Z0-9_]*;
   symbol        = ':' . var;
+  label         = var . ':';
   newline       = '\n';
 
   assoc         = '=>';
@@ -36,10 +37,16 @@ module Sourcify
   line_start    = (newline | smcolon | lparen) . spaces;
   modifier      = (kw_if | kw_unless | kw_while | kw_until);
 
-  do_block_start   = kw_do;
-  do_block_end     = kw_end;
-  do_block_nstart1 = line_start . (kw_if | kw_unless | kw_class | kw_module | kw_def | kw_begin | kw_case);
-  do_block_nstart2 = line_start . (kw_while | kw_until | kw_for);
+  hash19        = lbrace . (^rbrace)* . label . (^rbrace)* . rbrace;
+  hash18        = lbrace . (^rbrace)* . assoc . (^rbrace)* . rbrace;
+
+  do_block_start    = kw_do;
+  do_block_end      = kw_end;
+  do_block_nstart1  = line_start . (kw_if | kw_unless | kw_class | kw_module | kw_def | kw_begin | kw_case);
+  do_block_nstart2  = line_start . (kw_while | kw_until | kw_for);
+
+  brace_block_start = lbrace;
+  brace_block_end   = rbrace;
 
   main := |*
 
@@ -47,6 +54,9 @@ module Sourcify
     do_block_end     => { push(ts, te); decrement(:do_block_end, :do_end) };
     do_block_nstart1 => { push(ts, te); increment(:do_block_nstart1, :do_end) };
     do_block_nstart2 => { push(ts, te); increment(:do_block_nstart2, :do_end) };
+
+    brace_block_start => { push(ts, te); increment(:brace_block_start, :brace) };
+    brace_block_end => { push(ts, te); decrement(:brace_block_end, :brace) };
 
     modifier => { push(ts, te) };
     lbrace   => { push(ts, te) };
@@ -58,6 +68,8 @@ module Sourcify
     ^alnum   => { push(ts, te) };
     var      => { push(ts, te) };
     symbol   => { push(ts, te) };
+    hash18   => { push(ts, te) };
+    hash19   => { push(ts, te) };
 
     (' '+)   => { push(ts, te) };
     any      => { push(ts, te) };
