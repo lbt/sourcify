@@ -1,5 +1,9 @@
-#require 'sourcify/proc/scanner_extensions'
-require 'scanner_extensions'
+begin
+  require 'sourcify/proc/scanner_extensions'
+rescue LoadError
+  # Happens when running tests at end of file
+  require 'scanner_extensions'
+end
 
 module Sourcify
   module Proc
@@ -88,7 +92,9 @@ module Sourcify
     sq_str26 | sq_str27 | sq_str28 | sq_str29
   );
 
-  # Another NASTY mess for double quote strings
+  # NASTY mess for double quote strings
+  # (currently we don't care abt interpolation, cos it is not a good
+  # practice to put complicated stuff (eg. proc) within interpolation)
   dqs      = ('%Q' | '%W' | '%' | '%r' | '%x');
   dq_str1  = '"' . (^'"' | '\"')* . '"';
   dq_str2  = '`' . (^'`' | '\`')* . '`';
@@ -112,6 +118,8 @@ module Sourcify
     dq_str26 | dq_str27 | dq_str28 | dq_str29 | dq_str30 |
     dq_str31
   );
+
+  # NASTY mess for double quote strings (w interpolation)
 
   main := |*
 
@@ -233,7 +241,7 @@ EOL
 
   end
 
-  describe 'Double quote strings' do
+  describe 'Double quote strings (wo interpolation)' do
 
     %w{~ ` ! @ # $ % ^ & * _ - + = \\ | ; : ' " , . ? /}.map{|w| [w,w] }.concat(
       [%w{( )}, %w{[ ]}, %w({ }), %w{< >}]
