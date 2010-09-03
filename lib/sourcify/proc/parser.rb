@@ -30,13 +30,13 @@ module Sourcify
             if (frags = raw_source_frags).size > 1
               raise MultipleMatchingProcsPerLineError
             else
-              'proc %s' % frags[0]
+              frags[0]
             end
         end
 
         def raw_source_frags
           Scanner.process(
-            Parsable.open(@file, 'r'){|fh| fh.forward(@line.pred).readlines }
+            Parsable.open(@file, 'r'){|fh| fh.forward(@line.pred).readlines.join }
           ).select{|code| eval(code).arity == @arity }
         end
 
