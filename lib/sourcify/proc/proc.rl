@@ -134,13 +134,18 @@ if $0 == __FILE__
   Bacon.summary_on_exit
   process = Sourcify::Proc::Ragel.method(:process)
 
-  %w{while}.each do |kw|
+  %w{while until if unless}.each do |kw|
     describe "Proc machine handling '#{kw}' as modifier" do
 
       class << self
-        def tokens(str); Sourcify::Proc::Ragel.process(str)[:tokens].map(&:first);          end
-        def should_not_include_modifier(str); tokens(str).should.not.include(:kw_modifier); end
-        def should_include_modifier(str);     tokens(str).should.include(:kw_modifier);     end
+        def should_not_include_modifier(str)
+          result = Sourcify::Proc::Ragel.process(str)
+          result[:tokens].map(&:first).should.not.include(:kw_modifier)
+        end
+        def should_include_modifier(str)
+          result = Sourcify::Proc::Ragel.process(str)
+          result[:tokens].map(&:first).should.include(:kw_modifier)
+        end
       end
 
       should "handle ... #{kw} ..." do
