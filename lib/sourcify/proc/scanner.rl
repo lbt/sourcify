@@ -41,24 +41,24 @@ module Sourcify
 
   main := |*
 
-    do_block_start   => { push(k = :do_block_start, ts, te);   increment(k, :do_end) };
-    do_block_end     => { push(k = :do_block_end, ts, te);     decrement(k, :do_end) };
-    do_block_nstart1 => { push(k = :do_block_nstart1, ts, te); increment(k, :do_end) };
-    do_block_nstart2 => { push(k = :do_block_nstart2, ts, te); increment(k, :do_end) };
+    do_block_start   => { push(ts, te); increment(:do_block_start, :do_end) };
+    do_block_end     => { push(ts, te); decrement(:do_block_end, :do_end) };
+    do_block_nstart1 => { push(ts, te); increment(:do_block_nstart1, :do_end) };
+    do_block_nstart2 => { push(ts, te); increment(:do_block_nstart2, :do_end) };
 
-    modifier => { push(:modifier, ts, te) };
-    lbrace   => { push(:lbrace, ts, te) };
-    rbrace   => { push(:rbrace, ts, te) };
-    lparen   => { push(:lparen, ts, te) };
-    rparen   => { push(:rparen, ts, te) };
-    smcolon  => { push(:smcolon, ts, te); increment_line };
-    newline  => { push(:newline, ts, te); increment_line };
-    ^alnum   => { push(:any, ts, te) };
-    var      => { push(:any, ts, te) };
-    symbol   => { push(:any, ts, te) };
+    modifier => { push(ts, te) };
+    lbrace   => { push(ts, te) };
+    rbrace   => { push(ts, te) };
+    lparen   => { push(ts, te) };
+    rparen   => { push(ts, te) };
+    smcolon  => { push(ts, te); increment_line };
+    newline  => { push(ts, te); increment_line };
+    ^alnum   => { push(ts, te) };
+    var      => { push(ts, te) };
+    symbol   => { push(ts, te) };
 
-    (' '+)   => { push(:space, ts, te) };
-    any      => { push(:any, ts, te) };
+    (' '+)   => { push(ts, te) };
+    any      => { push(ts, te) };
   *|;
 
 }%%
@@ -72,7 +72,7 @@ module Sourcify
           begin
             reset_collectibles
             @results, @lineno = [], 1
-            @data = data.unpack("c*") if data.is_a?(String)
+            @data = data.unpack("c*")
             execute!
           rescue Escape
             @results
@@ -86,8 +86,8 @@ module Sourcify
           %% write exec;
         end
 
-        def push(key, ts, te)
-          @tokens << [key, @data[ts .. te.pred].pack('c*')]
+        def push(ts, te)
+          @tokens << @data[ts .. te.pred].pack('c*')
         end
 
         def increment_line
@@ -127,7 +127,7 @@ module Sourcify
 
         def construct_result_code
           begin
-            code = 'proc ' + @tokens.map(&:last).join
+            code = 'proc ' + @tokens.join
             eval(code) # TODO: is there a better way to check for SyntaxError ?
             @results << code
             raise Escape unless @lineno == 1
