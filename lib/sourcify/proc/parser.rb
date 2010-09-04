@@ -30,7 +30,8 @@ module Sourcify
             if (frags = raw_source_frags).size > 1
               raise MultipleMatchingProcsPerLineError
             else
-              frags[0]
+              # Cheapo hack to ensure __LINE__ is correctly represented !!
+              ("\n" * @line.pred) + frags[0]
             end
         end
 
