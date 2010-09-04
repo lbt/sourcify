@@ -55,24 +55,40 @@ module Sourcify
   brace_block_start = lbrace;
   brace_block_end   = rbrace;
 
-  qs1  = '~' . (^'~' | '\~')* . '~';  qs2  = '`' . (^'`' | '\`')* . '`';
-  qs3  = '!' . (^'!' | '\!')* . '!';  qs4  = '@' . (^'@' | '\@')* . '@';
-  qs5  = '#' . (^'#' | '\#')* . '#';  qs6  = '$' . (^'$' | '\$')* . '$';
-  qs7  = '%' . (^'%' | '\%')* . '%';  qs8  = '^' . (^'^' | '\^')* . '^';
-  qs9  = '&' . (^'&' | '\&')* . '&';  qs10 = '*' . (^'*' | '\*')* . '*';
-  qs11 = '-' . (^'-' | '\-')* . '-';  qs12 = '_' . (^'_' | '\_')* . '_';
-  qs13 = '+' . (^'+' | '\+')* . '+';  qs14 = '=' . (^'=' | '\=')* . '=';
-  qs15 = '<' . (^'>' | '\>')* . '>';  qs16 = '|' . (^'|' | '\|')* . '|';
-  qs17 = ':' . (^':' | '\:')* . ':';  qs18 = ';' . (^';' | '\;')* . ';';
-  qs19 = '"' . (^'"' | '\"')* . '"';  qs20 = "'" . (^"'" | "\'")* . "'";
-  qs21 = ',' . (^',' | '\,')* . ',';  qs22 = '.' . (^'.' | '\.')* . '.';
-  qs23 = '?' . (^'?' | '\?')* . '?';  qs24 = '/' . (^'/' | '\/')* . '/';
-  qs25 = '{' . (^'}' | '\}')* . '}';  qs26 = '[' . (^']' | '\]')* . ']';
-  qs27 = '(' . (^')' | '\)')* . ')';  qs28 = '\\' . (^'\\' | '\\\\')* . '\\';
+#  qs1  = '~' . (^'~' | '\~')* . '~';  qs2  = '`' . (^'`' | '\`')* . '`';
+#  qs3  = '!' . (^'!' | '\!')* . '!';  qs4  = '@' . (^'@' | '\@')* . '@';
+#  qs5  = '#' . (^'#' | '\#')* . '#';  qs6  = '$' . (^'$' | '\$')* . '$';
+#  qs7  = '%' . (^'%' | '\%')* . '%';  qs8  = '^' . (^'^' | '\^')* . '^';
+#  qs9  = '&' . (^'&' | '\&')* . '&';  qs10 = '*' . (^'*' | '\*')* . '*';
+#  qs11 = '-' . (^'-' | '\-')* . '-';  qs12 = '_' . (^'_' | '\_')* . '_';
+#  qs13 = '+' . (^'+' | '\+')* . '+';  qs14 = '=' . (^'=' | '\=')* . '=';
+#  qs15 = '<' . (^'>' | '\>')* . '>';  qs16 = '|' . (^'|' | '\|')* . '|';
+#  qs17 = ':' . (^':' | '\:')* . ':';  qs18 = ';' . (^';' | '\;')* . ';';
+#  qs19 = '"' . (^'"' | '\"')* . '"';  qs20 = "'" . (^"'" | "\'")* . "'";
+#  qs21 = ',' . (^',' | '\,')* . ',';  qs22 = '.' . (^'.' | '\.')* . '.';
+#  qs23 = '?' . (^'?' | '\?')* . '?';  qs24 = '/' . (^'/' | '\/')* . '/';
+#  qs25 = '{' . (^'}' | '\}')* . '}';  qs26 = '[' . (^']' | '\]')* . ']';
+#  qs27 = '(' . (^')' | '\)')* . ')';  qs28 = '\\' . (^'\\' | '\\\\')* . '\\';
+
+  qs1  = '~' . [^\~]* . '~';  qs2  = '`' . [^\`]* . '`';
+  qs3  = '!' . [^\!]* . '!';  qs4  = '@' . [^\@]* . '@';
+  qs5  = '#' . [^\#]* . '#';  qs6  = '$' . [^\$]* . '$';
+  qs7  = '%' . [^\%]* . '%';  qs8  = '^' . [^\^]* . '^';
+  qs9  = '&' . [^\&]* . '&';  qs10 = '*' . [^\*]* . '*';
+  qs11 = '-' . [^\-]* . '-';  qs12 = '_' . [^\_]* . '_';
+  qs13 = '+' . [^\+]* . '+';  qs14 = '=' . [^\=]* . '=';
+  qs15 = '<' . [^\>]* . '>';  qs16 = '|' . [^\|]* . '|';
+  qs17 = ':' . [^\:]* . ':';  qs18 = ';' . [^\;]* . ';';
+  qs19 = '"' . [^\"]* . '"';  qs20 = "'" . [^\']* . "'";
+  qs21 = ',' . [^\,]* . ',';  qs22 = '.' . [^\.]* . '.';
+  qs23 = '?' . [^\?]* . '?';  qs24 = '/' . [^\/]* . '/';
+  qs25 = '{' . [^\}]* . '}';  qs26 = '[' . [^\]]* . ']';
+  qs27 = '(' . [^\)]* . ')';  qs28 = '\\' . [^\\]* . '\\';
 
   # NASTY mess for single quoted strings
   sqs      = ('%q' | '%w');
-  sq_str1  = "'" . (^"'" | "\'")* . "'";
+#  sq_str1  = "'" . (^"'" | "\\'")? . "'";
+  sq_str1  = "'" . [^\']* . "'";
   sq_str2  = sqs . qs1;   sq_str3  = sqs . qs2;   sq_str4  = sqs . qs3;
   sq_str5  = sqs . qs4;   sq_str6  = sqs . qs5;   sq_str7  = sqs . qs6;
   sq_str8  = sqs . qs7;   sq_str9  = sqs . qs8;   sq_str10 = sqs . qs9;
@@ -96,9 +112,12 @@ module Sourcify
   # (currently we don't care abt interpolation, cos it is not a good
   # practice to put complicated stuff (eg. proc) within interpolation)
   dqs      = ('%Q' | '%W' | '%' | '%r' | '%x');
-  dq_str1  = '"' . (^'"' | '\"')* . '"';
-  dq_str2  = '`' . (^'`' | '\`')* . '`';
-  dq_str3  = '/' . (^'/' | '\/')* . '/';
+#  dq_str1  = '"' . (^'"' | '\"')? . '"';
+#  dq_str2  = '`' . (^'`' | '\`')? . '`';
+#  dq_str3  = '/' . (^'/' | '\/')? . '/';
+  dq_str1  = '"' . [^\"]* . '"';
+  dq_str2  = '`' . [^\`]* . '`';
+  dq_str3  = '/' . [^\/]* . '/';
   dq_str4  = dqs . qs1;   dq_str5  = dqs . qs2;   dq_str6  = dqs . qs3;
   dq_str7  = dqs . qs4;   dq_str8  = dqs . qs5;   dq_str9  = dqs . qs6;
   dq_str10 = dqs . qs7;   dq_str11 = dqs . qs8;   dq_str12 = dqs . qs9;
@@ -206,12 +225,22 @@ EOL
           ).strip)
         end
 
-        should "handle '%#{t}#{q1}...#{q2}' (w escape)" do
+#        should "handle '%#{t}#{q1}...#{q2}' (w escape)" do
+#          process(<<-EOL
+#            %#{t}#{q1}hel\\#{q2}lo#{q2}
+#EOL
+#          ).should.include((<<-EOL
+#            %#{t}#{q1}hel\\#{q2}lo#{q2}
+#EOL
+#          ).strip)
+#        end
+
+        should "handle '%#{t}#{q1}...#{q2}' (wo escape & multiple)" do
           process(<<-EOL
-            %#{t}#{q1}hel\\#{q2}lo#{q2}
+            %#{t}#{q1}hello#{q2} %#{t}#{q1}world#{q2}
 EOL
           ).should.include((<<-EOL
-            %#{t}#{q1}hel\\#{q2}lo#{q2}
+            %#{t}#{q1}hello#{q2}
 EOL
           ).strip)
         end
@@ -229,12 +258,22 @@ EOL
       ).strip)
     end
 
-    should "handle '...' (w escape)" do
+#    should "handle '...' (w escape)" do
+#      process(<<-EOL
+#        'hel\'lo'
+#EOL
+#      ).should.include((<<-EOL
+#        'hel\'lo'
+#EOL
+#      ).strip)
+#    end
+
+    should "handle '...' (wo escape & multiple)" do
       process(<<-EOL
-        'hel\'lo'
+        'hello' 'world'
 EOL
       ).should.include((<<-EOL
-        'hel\'lo'
+        'hello'
 EOL
       ).strip)
     end
@@ -258,12 +297,22 @@ EOL
           ).strip)
         end
 
-        should "handle '%#{t}#{q1}...#{q2}' (w escape)" do
+#        should "handle '%#{t}#{q1}...#{q2}' (w escape)" do
+#          process(<<-EOL
+#            %#{t}#{q1}hel\\#{q2}lo#{q2}
+#EOL
+#          ).should.include((<<-EOL
+#            %#{t}#{q1}hel\\#{q2}lo#{q2}
+#EOL
+#          ).strip)
+#        end
+
+        should "handle '%#{t}#{q1}...#{q2}' (wo escape & multiple)" do
           process(<<-EOL
-            %#{t}#{q1}hel\\#{q2}lo#{q2}
+            %#{t}#{q1}hello#{q2} %#{t}#{q1}world#{q2}
 EOL
           ).should.include((<<-EOL
-            %#{t}#{q1}hel\\#{q2}lo#{q2}
+            %#{t}#{q1}hello#{q2}
 EOL
           ).strip)
         end
@@ -283,15 +332,25 @@ EOL
         ).strip)
       end
 
-      should 'handle #{q}...#{q} (w escape)' do
+      should 'handle #{q}...#{q} (wo escape & multiple)' do
         process(<<-EOL
-          #{q}hel\#{q}lo#{q}
+          #{q}hello#{q} #{q}world#{q}
 EOL
         ).should.include((<<-EOL
-          #{q}hel\#{q}lo#{q}
+          #{q}hello#{q}
 EOL
         ).strip)
       end
+
+#      should 'handle #{q}...#{q} (w escape)' do
+#        process(<<-EOL
+#          #{q}hel\#{q}lo#{q}
+#EOL
+#        ).should.include((<<-EOL
+#          #{q}hel\#{q}lo#{q}
+#EOL
+#        ).strip)
+#      end
 
     end
 
