@@ -136,7 +136,7 @@ module Sourcify
     rbrace   => { push(ts, te) };
     lparen   => { push(ts, te) };
     rparen   => { push(ts, te) };
-    smcolon  => { push(ts, te); increment_line };
+    smcolon  => { push(ts, te) };
     newline  => { push(ts, te); increment_line };
     ^alnum   => { push(ts, te) };
     var      => { push(ts, te) };
