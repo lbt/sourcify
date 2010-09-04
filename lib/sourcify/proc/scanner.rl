@@ -158,19 +158,17 @@ module Sourcify
     do_block_nstart1 => { push(k = :do_block_nstart1, ts, te); increment_counter(k, :do_end) };
     do_block_nstart2 => { push(k = :do_block_nstart2, ts, te); increment_counter(k, :do_end) };
 
-    brace_block_start => { push(k = :brace_block_start, ts, te); increment_counter(k, :brace) };
-    brace_block_end => { push(k = :brace_block_end, ts, te); decrement_counter(k, :brace) };
+    lbrace => { push(:lbrace, ts, te); increment_counter(:brace_block_start, :brace) };
+    rbrace => { push(:rbrace, ts, te); decrement_counter(:brace_block_end, :brace) };
 
     modifier => { push(:modifier, ts, te) };
-    lbrace   => { push(:lbrace, ts, te) };
-    rbrace   => { push(:rbrace, ts, te) };
     lparen   => { push(:lparen, ts, te) };
     rparen   => { push(:rparen, ts, te) };
     smcolon  => { push(:smcolon, ts, te) };
     newline  => { push(:newline, ts, te); increment_line };
     ^alnum   => { push(:any, ts, te) };
     lvar     => { push(:lvar_or_meth, ts, te) };
-    ovars    => { push(:ovars, ts, te) };
+    ovars    => { push(:other_vars, ts, te) };
     symbol   => { push(:symbol, ts, te) };
     assoc    => { push(:assoc, ts, te); fix_counter_false_start(:brace) };
     label    => { push(:label, ts, te); fix_counter_false_start(:brace) };
