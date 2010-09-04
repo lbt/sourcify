@@ -374,24 +374,22 @@ EOL
   describe 'Commented lines' do
 
     should 'handle # ...' do
-      process(%{
+      process(<<EOL
         hello # blah
         world
-      }).should.include("# blah\n")
+EOL
+      ).should.include("# blah\n")
     end
 
     should 'handle =begin ... =end' do
-      process(%{
+      process(<<EOL
         hello
 =begin aa
 bb
 =end cc
         world
-        }).should.include(%{
-=begin aa
-bb
-=end cc
-})
+EOL
+        ).should.include("\n=begin aa\nbb\n=end cc\n")
     end
 
   end
