@@ -7,6 +7,7 @@ module Sourcify
 
         def process(data)
           begin
+            puts '', data
             @results, @data = [], data.unpack("c*")
             reset_attributes
             execute!
@@ -17,12 +18,33 @@ module Sourcify
 
         def push(key, ts, te)
           data = @data[ts .. te.pred].pack('c*')
+          puts '', key, data
           case key
           when :label
             # NOTE: 1.9.* supports label key, which RubyParser cannot handle, thus
             # conversion is needed.
             @tokens << data.sub(/^(.*)\:$/, ':\1') << ' ' << '=>'
             @keys << :symbol << :any << :assoc
+          when :heredoc_begin
+            # NOTE: Ragel doesn't support back-referencing, that's why we need to take
+            # special care for heredoc
+            m = data.match(/\<\<(\-?)(\w+)\s*$/)[1..2]
+            @heredoc = {:begin => @tokens.size, :tag => m[1], :indent => !m[0].empty?}
+            @tokens << data
+            @keys << :any
+          when :heredoc_end
+            # NOTE: This may or may not be end of the heredoc, extra care needs to be
+            # taken to ensure this is really what we want.
+            indent, tag, index = [:indent, :tag, :begin].map{|k| @heredoc[k] } rescue nil
+            if (indent && data.strip == tag) or (!indent && data == "\n#{tag}\n")
+              @heredoc = nil
+              @keys.slice!(index .. -1)
+              @tokens << (@tokens.slice!(index .. -1) << data).join
+              @keys << :heredoc
+            else
+              @keys << key
+              @tokens << data
+            end
           else
             @keys << key
             @tokens << data
@@ -35,11 +57,11 @@ module Sourcify
         end
 
         def increment_counter(type, key)
-          send(:"increment_#{key}_counter", type)
+          send(:"increment_#{key}_counter", type) unless @heredoc
         end
 
         def decrement_counter(type, key)
-          send(:"decrement_#{key}_counter")
+          send(:"decrement_#{key}_counter") unless @heredoc
         end
 
         def increment_do_end_counter(type)

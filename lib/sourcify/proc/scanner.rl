@@ -34,6 +34,7 @@ module Sourcify
   ovars         = ('@' | '@@' | '$') . lvar;
   symbol        = ':' . (lvar | ovars);
   label         = lvar . ':';
+  constant      = [A-Z_][a-zA-Z0-9_]*;
   newline       = '\n';
 
   assoc         = '=>';
@@ -49,9 +50,14 @@ module Sourcify
   block_comment = newline . '=begin' . ^newline* . newline . any* . newline . '=end' . ^newline* . newline;
   comments      = (line_comment | block_comment);
 
+  cfrag1  = '<<' . spaces . (^spaces & ^newline)+;
+  cfrag2  = constant . spaces . '<' . spaces . constant;
+  cfrag3  = constant;
+  class   = kw_class . spaces . (cfrag1 | cfrag2 | cfrag3);
+
   do_block_start    = kw_do;
   do_block_end      = kw_end;
-  do_block_nstart1  = line_start . (kw_if | kw_unless | kw_class | kw_module | kw_def | kw_begin | kw_case);
+  do_block_nstart1  = line_start . (class | kw_if | kw_unless | kw_module | kw_def | kw_begin | kw_case);
   do_block_nstart2  = line_start . (kw_while | kw_until | kw_for);
 
   brace_block_start = lbrace;
@@ -140,7 +146,10 @@ module Sourcify
     dq_str31
   );
 
-  # NASTY mess for double quote strings (w interpolation)
+  # Heredoc
+  heredoc_tag    = [A-Za-z\_][A-Za-z0-9\_]*;
+  heredoc_begin  = ('<<' | '<<-') . heredoc_tag . newline;
+  heredoc_end    = newline . spaces . heredoc_tag . newline;
 
   main := |*
 
@@ -152,25 +161,27 @@ module Sourcify
     brace_block_start => { push(k = :brace_block_start, ts, te); increment_counter(k, :brace) };
     brace_block_end => { push(k = :brace_block_end, ts, te); decrement_counter(k, :brace) };
 
-    modifier => { push(:any, ts, te) };
-    lbrace   => { push(:any, ts, te) };
-    rbrace   => { push(:any, ts, te) };
-    lparen   => { push(:any, ts, te) };
-    rparen   => { push(:any, ts, te) };
-    smcolon  => { push(:any, ts, te) };
-    newline  => { push(:any, ts, te); increment_line };
+    modifier => { push(:modifier, ts, te) };
+    lbrace   => { push(:lbrace, ts, te) };
+    rbrace   => { push(:rbrace, ts, te) };
+    lparen   => { push(:lparen, ts, te) };
+    rparen   => { push(:rparen, ts, te) };
+    smcolon  => { push(:smcolon, ts, te) };
+    newline  => { push(:newline, ts, te); increment_line };
     ^alnum   => { push(:any, ts, te) };
-    lvar     => { push(:meth, ts, te) };
-    ovars    => { push(:any, ts, te) };
-    symbol   => { push(:any, ts, te) };
+    lvar     => { push(:lvar_or_meth, ts, te) };
+    ovars    => { push(:ovars, ts, te) };
+    symbol   => { push(:symbol, ts, te) };
     assoc    => { push(:assoc, ts, te); fix_counter_false_start(:brace) };
     label    => { push(:label, ts, te); fix_counter_false_start(:brace) };
 
-    single_quote_strs => { push(:any, ts, te) };
-    double_quote_strs => { push(:any, ts, te) };
+    single_quote_strs => { push(:squote_str, ts, te) };
+    double_quote_strs => { push(:dquote_str, ts, te) };
+    heredoc_begin     => { push(:heredoc_begin, ts, te); increment_line };
+    heredoc_end       => { push(:heredoc_end, ts, te); increment_line };
 
     comments => { push(:comment, ts, te); increment_line };
-    (' '+)   => { push(:any, ts, te) };
+    (' '+)   => { push(:spaces, ts, te) };
     any      => { push(:any, ts, te) };
   *|;
 
@@ -381,6 +392,109 @@ bb
 bb
 =end cc
 })
+    end
+
+  end
+
+  describe 'Heredoc strings' do
+
+    should 'handle <<-X\n .. \nX\n' do
+      process(<<EOL
+        aa
+        s <<-X
+          bb 
+X
+        cc
+EOL
+      ).should.include("<<-X\n          bb \nX\n")
+    end
+
+    should 'not handle <<-X\n .. \nX \n' do
+      process(<<EOL
+        aa
+        s <<-X
+          bb
+X 
+        cc
+EOL
+      ).should.not.include("<<-X\n          bb \nX \n")
+    end
+
+    should 'handle <<-X\n .. \n  X\n' do
+      process(<<EOL
+        aa
+        s <<-X
+          bb 
+  X
+        cc
+EOL
+      ).should.include("<<-X\n          bb \n  X\n")
+    end
+
+    should 'not handle <<-X\n .. \n  X \n' do
+      process(<<EOL
+        aa
+        s <<-X
+          bb 
+  X 
+        cc
+EOL
+      ).should.not.include("<<-X\n          bb \n  X \n")
+    end
+
+    should 'handle <<X\n .. \nX' do
+      process(<<EOL
+        aa
+        s <<X
+          bb 
+X
+        cc
+EOL
+      ).should.include("<<X\n          bb \nX\n")
+    end
+
+    should 'not handle <<X\n .. \nX ' do
+      process(<<EOL
+        aa
+        s <<X
+          bb 
+X 
+        cc
+EOL
+      ).should.not.include("<<X\n          bb \nX \n")
+    end
+
+    should 'not handle <<X\n .. \n  X' do
+      process(<<EOL
+        aa
+        s <<X
+          bb 
+  X
+        cc
+EOL
+      ).should.not.include("<<X\n          bb \n  X\n")
+    end
+
+    should 'not handle class <<X ..' do
+      process(<<EOL
+        aa
+        class <<X
+          bb 
+X
+        cc
+EOL
+      ).should.not.include("<<X\n          bb \nX\n")
+    end
+
+    should 'handle xclass <<X ..' do
+      process(<<EOL
+        aa
+        xclass <<X
+          bb 
+X
+        cc
+EOL
+      ).should.include("<<X\n          bb \nX\n")
     end
 
   end
