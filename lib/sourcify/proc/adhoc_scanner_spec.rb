@@ -1,7 +1,22 @@
-# NOTE: This spec file is only intended for ad-hoc development of ./scanner.rl.
+# NOTE: The specs covered here are probably incomplete, and are added on an
+# ad-hoc basis while writing ./scanner.rl.
 require 'rubygems'
 require 'bacon'
 Bacon.summary_on_exit
+
+rl_dir = File.dirname(File.expand_path(__FILE__));
+rl_file = File.join(rl_dir, 'scanner.rl')
+rb_file = File.join(rl_dir, 'scanner.rb')
+
+File.delete(rb_file) rescue nil
+system("ragel -R #{rl_file}")
+
+begin
+  require File.join(rl_dir, 'scanner_extensions.rb')
+  require File.join(rl_dir, 'scanner.rb')
+rescue LoadError
+  raise $!
+end
 
 module Sourcify::Proc::Scanner
   class << self ; attr_reader :tokens ; end
@@ -193,7 +208,7 @@ describe 'Heredoc strings' do
 X
       cc
 EOL
-    ).should.include("<<-X\n          bb \nX\n")
+    ).should.include("<<-X\n        bb \nX\n")
   end
 
   should 'not handle <<-X\n .. \nX \n' do
@@ -204,7 +219,7 @@ EOL
 X 
       cc
 EOL
-    ).should.not.include("<<-X\n          bb \nX \n")
+    ).should.not.include("<<-X\n        bb \nX \n")
   end
 
   should 'handle <<-X\n .. \n  X\n' do
@@ -212,10 +227,10 @@ EOL
       aa
       s <<-X
         bb 
-X
+  X
       cc
 EOL
-    ).should.include("<<-X\n          bb \n  X\n")
+    ).should.include("<<-X\n        bb \n  X\n")
   end
 
   should 'not handle <<-X\n .. \n  X \n' do
@@ -226,7 +241,7 @@ EOL
 X 
       cc
 EOL
-    ).should.not.include("<<-X\n          bb \n  X \n")
+    ).should.not.include("<<-X\n        bb \n  X \n")
   end
 
   should 'handle <<X\n .. \nX' do
@@ -237,7 +252,7 @@ EOL
 X
       cc
 EOL
-    ).should.include("<<X\n          bb \nX\n")
+    ).should.include("<<X\n        bb \nX\n")
   end
 
   should 'not handle <<X\n .. \nX ' do
@@ -248,7 +263,7 @@ EOL
 X 
       cc
 EOL
-    ).should.not.include("<<X\n          bb \nX \n")
+    ).should.not.include("<<X\n        bb \nX \n")
   end
 
   should 'not handle <<X\n .. \n  X' do
@@ -259,7 +274,7 @@ EOL
 X
       cc
 EOL
-    ).should.not.include("<<X\n          bb \n  X\n")
+    ).should.not.include("<<X\n       bb \n  X\n")
   end
 
   should 'not handle class <<X ..' do
@@ -270,7 +285,7 @@ EOL
 X
       cc
 EOL
-    ).should.not.include("<<X\n          bb \nX\n")
+    ).should.not.include("<<X\n        bb \nX\n")
   end
 
   should 'handle xclass <<X ..' do
@@ -281,7 +296,7 @@ EOL
 X
       cc
 EOL
-    ).should.include("<<X\n          bb \nX\n")
+    ).should.include("<<X\n        bb \nX\n")
   end
 
 end

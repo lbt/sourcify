@@ -1,10 +1,3 @@
-begin
-  require 'sourcify/proc/scanner_extensions'
-rescue LoadError
-  # Happens when running tests at end of file
-  require 'scanner_extensions'
-end
-
 module Sourcify
   module Proc
     module Scanner #:nodoc:all
