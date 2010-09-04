@@ -30,9 +30,10 @@ module Sourcify
   lparen        = '(';
   rparen        = ')';
 
-  var           = [a-z_][a-zA-Z0-9_]*;
-  symbol        = ':' . var;
-  label         = var . ':';
+  lvar          = [a-z_][a-zA-Z0-9_]*;
+  ovars         = ('@' | '@@' | '$') . lvar;
+  symbol        = ':' . (lvar | ovars);
+  label         = lvar . ':';
   newline       = '\n';
 
   assoc         = '=>';
@@ -142,32 +143,33 @@ module Sourcify
 
   main := |*
 
-    do_block_start   => { push(ts, te); increment(:do_block_start, :do_end) };
-    do_block_end     => { push(ts, te); decrement(:do_block_end, :do_end) };
-    do_block_nstart1 => { push(ts, te); increment(:do_block_nstart1, :do_end) };
-    do_block_nstart2 => { push(ts, te); increment(:do_block_nstart2, :do_end) };
+    do_block_start   => { push(k = :do_block_start, ts, te); increment_counter(k, :do_end) };
+    do_block_end     => { push(k = :do_block_end, ts, te); decrement_counter(k, :do_end) };
+    do_block_nstart1 => { push(k = :do_block_nstart1, ts, te); increment_counter(k, :do_end) };
+    do_block_nstart2 => { push(k = :do_block_nstart2, ts, te); increment_counter(k, :do_end) };
 
-    brace_block_start => { push(ts, te); increment(:brace_block_start, :brace) };
-    brace_block_end => { push(ts, te); decrement(:brace_block_end, :brace) };
+    brace_block_start => { push(k = :brace_block_start, ts, te); increment_counter(k, :brace) };
+    brace_block_end => { push(k = :brace_block_end, ts, te); decrement_counter(k, :brace) };
 
-    modifier => { push(ts, te) };
-    lbrace   => { push(ts, te) };
-    rbrace   => { push(ts, te) };
-    lparen   => { push(ts, te) };
-    rparen   => { push(ts, te) };
-    smcolon  => { push(ts, te) };
-    newline  => { push(ts, te); increment_line };
-    ^alnum   => { push(ts, te) };
-    var      => { push(ts, te) };
-    symbol   => { push(ts, te) };
-    hash18   => { push(ts, te) };
-    hash19   => { push(ts, te) };
+    modifier => { push(:any, ts, te) };
+    lbrace   => { push(:any, ts, te) };
+    rbrace   => { push(:any, ts, te) };
+    lparen   => { push(:any, ts, te) };
+    rparen   => { push(:any, ts, te) };
+    smcolon  => { push(:any, ts, te) };
+    newline  => { push(:any, ts, te); increment_line };
+    ^alnum   => { push(:any, ts, te) };
+    lvar     => { push(:meth, ts, te) };
+    ovars    => { push(:any, ts, te) };
+    symbol   => { push(:any, ts, te) };
+    assoc    => { push(:assoc, ts, te); fix_counter_false_start(:brace) };
+    label    => { push(:label, ts, te); fix_counter_false_start(:brace) };
 
-    single_quote_strs => { push(ts, te) };
-    double_quote_strs => { push(ts, te) };
+    single_quote_strs => { push(:any, ts, te) };
+    double_quote_strs => { push(:any, ts, te) };
 
-    (' '+)   => { push(ts, te) };
-    any      => { push(ts, te) };
+    (' '+)   => { push(:any, ts, te) };
+    any      => { push(:any, ts, te) };
   *|;
 
 }%%
