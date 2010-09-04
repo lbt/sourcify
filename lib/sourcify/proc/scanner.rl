@@ -49,9 +49,6 @@ module Sourcify
   block_comment = newline . '=begin' . ^newline* . newline . any* . newline . '=end' . ^newline* . newline;
   comments      = (line_comment | block_comment);
 
-#  hash19        = lbrace . (^rbrace)* . label . (^rbrace)* . rbrace;
-#  hash18        = lbrace . (^rbrace)* . assoc . (^rbrace)* . rbrace;
-
   do_block_start    = kw_do;
   do_block_end      = kw_end;
   do_block_nstart1  = line_start . (kw_if | kw_unless | kw_class | kw_module | kw_def | kw_begin | kw_case);
