@@ -6,13 +6,11 @@ module Sourcify
         class Escape < Exception; end
 
         def process(data)
-          require 'pp'
           begin
             @results, @data = [], data.unpack("c*")
             reset_attributes
             execute!
           rescue Escape
-            pp @results
             @results
           end
         end
@@ -46,8 +44,6 @@ module Sourcify
 
         def increment_do_end_counter(type)
           return if @brace_counter.started?
-          puts '', 'inside increment_do_end_counter'
-          pp @tokens
           case type
           when :do_block_nstart1 then @do_end_counter.increment
           when :do_block_nstart2 then @do_end_counter.increment(0..1)
@@ -59,24 +55,18 @@ module Sourcify
 
         def decrement_do_end_counter
           return unless @do_end_counter.started?
-          puts '', 'inside decrement_do_end_counter'
-          pp @tokens
           @do_end_counter.decrement
           construct_result_code if @do_end_counter.balanced?
         end
 
         def increment_brace_counter(type)
           return if @do_end_counter.started?
-          puts '', 'inside increment_brace_counter'
-          pp @tokens
           offset_attributes unless @brace_counter.started?
           @brace_counter.increment
         end
 
         def decrement_brace_counter
           return unless @brace_counter.started?
-          puts '', 'inside decrement_brace_counter'
-          pp @tokens
           @brace_counter.decrement
           construct_result_code if @brace_counter.balanced?
         end
@@ -94,8 +84,6 @@ module Sourcify
             @results << code
             raise Escape unless @lineno == 1
             reset_attributes
-            puts '', 'inside construct_result_code'
-            pp @tokens, @results
           rescue SyntaxError
           end
         end
