@@ -50,18 +50,15 @@ module Sourcify
   block_comment = newline . '=begin' . ^newline* . newline . any* . newline . '=end' . ^newline* . newline;
   comments      = (line_comment | block_comment);
 
-  cfrag1  = '<<' . spaces . (^spaces & ^newline)+;
-  cfrag2  = constant . spaces . '<' . spaces . constant;
-  cfrag3  = constant;
-  class   = kw_class . spaces . (cfrag1 | cfrag2 | cfrag3);
+  cfrag1        = '<<' . spaces . (^spaces & ^newline)+;
+  cfrag2        = constant . spaces . '<' . spaces . constant;
+  cfrag3        = constant;
+  declare_class = kw_class . spaces . (cfrag1 | cfrag2 | cfrag3);
 
   do_block_start    = kw_do;
   do_block_end      = kw_end;
-  do_block_nstart1  = line_start . (class | kw_if | kw_unless | kw_module | kw_def | kw_begin | kw_case);
+  do_block_nstart1  = line_start . (declare_class | kw_if | kw_unless | kw_module | kw_def | kw_begin | kw_case);
   do_block_nstart2  = line_start . (kw_while | kw_until | kw_for);
-
-  brace_block_start = lbrace;
-  brace_block_end   = rbrace;
 
 #  qs1  = '~' . (^'~' | '\~')* . '~';  qs2  = '`' . (^'`' | '\`')* . '`';
 #  qs3  = '!' . (^'!' | '\!')* . '!';  qs4  = '@' . (^'@' | '\@')* . '@';
@@ -166,7 +163,6 @@ module Sourcify
     rparen   => { push(:rparen, ts, te) };
     smcolon  => { push(:smcolon, ts, te) };
     newline  => { push(:newline, ts, te); increment_line };
-    ^alnum   => { push(:any, ts, te) };
     lvar     => { push(:lvar_or_meth, ts, te) };
     ovars    => { push(:other_vars, ts, te) };
     symbol   => { push(:symbol, ts, te) };
