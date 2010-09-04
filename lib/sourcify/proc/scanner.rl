@@ -45,8 +45,12 @@ module Sourcify
   squote        = "'";
   dquote        = '"';
 
-  hash19        = lbrace . (^rbrace)* . label . (^rbrace)* . rbrace;
-  hash18        = lbrace . (^rbrace)* . assoc . (^rbrace)* . rbrace;
+  line_comment  = '#' . ^newline* . newline;
+  block_comment = newline . '=begin' . ^newline* . newline . any* . newline . '=end' . ^newline* . newline;
+  comments      = (line_comment | block_comment);
+
+#  hash19        = lbrace . (^rbrace)* . label . (^rbrace)* . rbrace;
+#  hash18        = lbrace . (^rbrace)* . assoc . (^rbrace)* . rbrace;
 
   do_block_start    = kw_do;
   do_block_end      = kw_end;
@@ -168,6 +172,7 @@ module Sourcify
     single_quote_strs => { push(:any, ts, te) };
     double_quote_strs => { push(:any, ts, te) };
 
+    comments => { push(:comment, ts, te); increment_line };
     (' '+)   => { push(:any, ts, te) };
     any      => { push(:any, ts, te) };
   *|;
@@ -354,6 +359,31 @@ EOL
 #        ).strip)
 #      end
 
+    end
+
+  end
+
+  describe 'Commented lines' do
+
+    should 'handle # ...' do
+      process(%{
+        hello # blah
+        world
+      }).should.include("# blah\n")
+    end
+
+    should 'handle =begin ... =end' do
+      process(%{
+        hello
+=begin aa
+bb
+=end cc
+        world
+        }).should.include(%{
+=begin aa
+bb
+=end cc
+})
     end
 
   end
