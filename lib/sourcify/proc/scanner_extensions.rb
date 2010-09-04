@@ -23,7 +23,7 @@ module Sourcify
           when :label
             # NOTE: 1.9.* supports label key, which RubyParser cannot handle, thus
             # conversion is needed.
-            @tokens << data << '' << '=>'
+            @tokens << data.sub(/^(.*)\:$/, ':\1') << ' ' << '=>'
             @keys << :symbol << :any << :assoc
           else
             @keys << key
