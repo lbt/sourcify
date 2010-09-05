@@ -133,7 +133,7 @@ describe 'Commented lines' do
       hello # blah
       world
 EOL
-    ).should.include("# blah\n")
+    ).should.include("# blah")
   end
 
   should 'handle =begin ... =end' do

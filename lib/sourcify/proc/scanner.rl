@@ -62,9 +62,9 @@ module Sourcify
   do_block_ostart_wo_nl = line_start_wo_nl . kw_oblock;
 
   ## COMMENTS
-  #  line_comment  = '#' . ^newline* . newline;
-  #  block_comment = newline . '=begin' . ^newline* . newline . any* . newline . '=end' . ^newline* . newline;
-  #  comments      = (line_comment | block_comment);
+  line_comment  = '#' . ^newline*;
+  block_comment = newline . '=begin' . ^newline* . newline . any* . newline . '=end' . ^newline* . newline;
+  comments      = (line_comment | block_comment);
 
   ## STRINGS
 
@@ -222,6 +222,7 @@ module Sourcify
     var      => { push(:var, ts, te) };
     const    => { push(:const, ts, te) };
     symbol   => { push(:symbol, ts, te) };
+    comments => { push(:comment, ts, te) };
 
     mspaces  => { push(:spaces, ts, te) };
     any      => { push(:any, ts, te) };
