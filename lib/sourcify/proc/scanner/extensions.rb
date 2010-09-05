@@ -78,9 +78,9 @@ module Sourcify
         def increment_do_end_counter(type)
           return if @brace_counter.started?
           case type
-          when :do_block_nstart1
+          when :do_block_mstart
             @do_end_counter.increment if @do_end_counter.started?
-          when :do_block_nstart2
+          when :do_block_ostart
             @do_end_counter.increment(0..1) if @do_end_counter.started?
           when :do_block_start
             offset_attributes unless @do_end_counter.started?
