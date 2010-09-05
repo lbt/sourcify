@@ -18,10 +18,11 @@ module Sourcify
 
         def push(key, ts, te)
           data = @data[ts .. te.pred].pack('c*')
-          begin
-            key = :lvar if key == :heredoc_end && @heredoc.nil?
-            send(:"push_#{key}", data)
-          rescue
+          key = :lvar if key == :heredoc_end && @heredoc.nil?
+          puts '', 'inside push ... %s, %s' % [key, data]
+          if respond_to?(dpush = :"push_#{key}")
+            send(dpush, data)
+          else
             @keys << key
             @tokens << data
           end
@@ -38,7 +39,6 @@ module Sourcify
           # NOTE: Ragel doesn't support back-referencing, that's why we need to take
           # special care for heredoc
           m = data.match(/\<\<(\-?)(\w+)\s*$/)[1..2]
-          increment_line
           @heredoc = {:begin => @tokens.size, :tag => m[1], :indent => !m[0].empty?}
           @tokens << data
           @keys << :any

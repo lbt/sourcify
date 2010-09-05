@@ -169,9 +169,11 @@ module Sourcify
   );
 
   # Heredoc
-  heredoc_tag    = [A-Za-z\_][A-Za-z0-9\_]* - keywords;
+  hchar1         = [A-Za-z\_];
+  hchar2         = [A-Za-z0-9\_];
+  heredoc_tag    = (hchar1 . hchar2{,1} | (hchar1 . hchar2{2}) - keywords | hchar1 . hchar2{3,});
   heredoc_begin  = ('<<' | '<<-') . heredoc_tag . newline;
-  heredoc_end    = (newline . spaces . heredoc_tag . newline) - keywords;
+  heredoc_end    = newline . spaces . heredoc_tag . newline;
 
   main := |*
 
