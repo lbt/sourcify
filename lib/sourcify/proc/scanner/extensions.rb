@@ -11,7 +11,6 @@ module Sourcify
 
         def process(data)
           begin
-            puts '', data
             @results, @data = [], data.unpack("c*")
             reset_attributes
             execute!
@@ -36,28 +35,26 @@ module Sourcify
           @data[range].pack('c*')
         end
 
+        def push_heredoc(ts, te)
+          if @heredoc.nil?
+            data = data_frag(ts .. te.pred)
+            indented, tag = data.match(/\<\<(\-?)['"]?(\w+)['"]?$/)[1..3]
+            @heredoc = Heredoc.new(tag, !indented.empty?)
+            @heredoc << data
+          else
+            @heredoc << data_frag(ts .. te.pred)
+            return true unless @heredoc.closed?(data_frag(te .. te))
+            @tokens << @heredoc.to_s
+            @keys << :heredoc
+            @heredoc = nil
+          end
+        end
+
         def push_label(data)
           # NOTE: 1.9.* supports label key, which RubyParser cannot handle, thus
           # conversion is needed.
           @tokens << data.sub(/^(.*)\:$/, ':\1') << ' ' << '=>'
           @keys << :symbol << :spaces << :assoc
-        end
-
-        def push_heredoc_start(data)
-          # NOTE: Ragel doesn't support backreferencing, that's why we need to take
-          # special care for heredoc
-          m = data.match(/\<\<(\-?)(\w+)\s*$/)[1..2]
-          @heredoc = Heredoc.new(@tokens.size, m[1], !m[0].empty?)
-          @heredoc.contents << data
-        end
-
-        def push_heredoc_content(data, next_token)
-          @heredoc.contents << data
-          if @heredoc.ending?(next_token)
-            @tokens << @heredoc.contents.join
-            @keys << :heredoc
-            @heredoc = nil
-          end
         end
 
         def increment_line
