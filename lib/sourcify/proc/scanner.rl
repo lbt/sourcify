@@ -1,9 +1,34 @@
+require File.join(File.dirname(__FILE__), 'scanner', 'extensions')
+
 module Sourcify
   module Proc
     module Scanner #:nodoc:all
 
 %%{
   machine proc;
+
+  var_char1     = lower | '_';
+  var_char2     = var_char1 | upper | digit;
+  const_char1   = upper;
+  const_char2   = const_char1 | var_char2;
+  var           = var_char1 . var_char2*;
+  const         = const_char1 . const_char2*;
+  symbol        = ':' . (var | const);
+
+  label         = (var | const) . ':';
+  assoc         = '=>';
+
+  lbrace        = '{';
+  rbrace        = '}';
+  lparen        = '(';
+  rparen        = ')';
+
+  newline       = '\n';
+  mspaces       = ' '+;
+  ospaces       = ' '*;
+  smcolon       = ';';
+
+  ## Keywords for do ... end matching
 
   kw_do         = 'do';
   kw_end        = 'end';
@@ -17,81 +42,32 @@ module Sourcify
   kw_class      = 'class';
   kw_module     = 'module';
   kw_def        = 'def';
-  keywords      = (
-    kw_do | kw_end | kw_begin | kw_case | kw_while | kw_until |
-    kw_for | kw_if | kw_unless | kw_class | kw_module | kw_def
-  );
 
-  lbrace        = '{';
-  rbrace        = '}';
-  lparen        = '(';
-  rparen        = ')';
+  singleton_class  = kw_class . ospaces . '<<' . ospaces . ^space+;
+  modifier         = kw_if | kw_unless | kw_while | kw_until;
+  line_start_w_nl  = newline . ospaces;
+  line_start_wo_nl = (lparen | smcolon) . ospaces;
 
-  lvar          = [a-z_][a-zA-Z0-9_]* - keywords;
-  ovars         = ('@' | '@@' | '$') . lvar;
-  symbol        = ':' . (lvar | ovars);
-  label         = lvar . ':';
-  constant      = [A-Z_][a-zA-Z0-9_]*;
-  newline       = '\n';
+  # NOTE:
+  # * 'm' ~> always consuming a matching 'end'
+  # * 'o' ~> may or may not be consuming a matching 'end'
+  kw_mblock = kw_begin | kw_case | kw_module | kw_def | kw_if | kw_unless | kw_class | singleton_class;
+  kw_oblock = kw_while | kw_until | kw_for;
 
-  assoc         = '=>';
-  assgn         = '=';
-  smcolon       = ';';
-  spaces        = ' '*;
-  line_start1   = newline . spaces;
-  line_start2   = (smcolon | lparen) . spaces;
-  line_start    = (line_start1 | line_start2);
-  modifier      = (kw_if | kw_unless | kw_while | kw_until);
-  squote        = "'";
-  dquote        = '"';
+  do_block_start   = kw_do;
+  do_block_end     = kw_end;
+  do_block_mstart_w_nl  = line_start_w_nl . kw_mblock;
+  do_block_mstart_wo_nl = line_start_wo_nl . kw_mblock;
+  do_block_ostart_w_nl  = line_start_w_nl . kw_oblock;
+  do_block_ostart_wo_nl = line_start_wo_nl . kw_oblock;
 
-  line_comment  = '#' . ^newline* . newline;
-  block_comment = newline . '=begin' . ^newline* . newline . any* . newline . '=end' . ^newline* . newline;
-  comments      = (line_comment | block_comment);
+  ## STRINGS
 
-  cfrag1        = '<<' . spaces . (^spaces & ^newline)+;
-  cfrag2        = constant . spaces . '<' . spaces . constant;
-  cfrag3        = constant;
-  declare_class = kw_class . spaces . (cfrag1 | cfrag2 | cfrag3);
+  # Heredoc requires more processing on scripting side, cos ragel doesn't
+  # support backreferencing, so we only catch the begin fragment here.
+  heredoc_start = ('<<' | '<<-') . (var | const) . newline;
 
-  do_block_start    = kw_do;
-  do_block_end      = kw_end;
-  do_block_nstart1a = line_start1 . (declare_class | kw_if | kw_unless | kw_module | kw_def | kw_begin | kw_case);
-  do_block_nstart1b = line_start2 . (declare_class | kw_if | kw_unless | kw_module | kw_def | kw_begin | kw_case);
-  do_block_nstart2a = line_start1 . (kw_while | kw_until | kw_for);
-  do_block_nstart2b = line_start2 . (kw_while | kw_until | kw_for);
-
-#  qs1  = '~' . (^'~' | '\~')* . '~';  qs2  = '`' . (^'`' | '\`')* . '`';
-#  qs3  = '!' . (^'!' | '\!')* . '!';  qs4  = '@' . (^'@' | '\@')* . '@';
-#  qs5  = '#' . (^'#' | '\#')* . '#';  qs6  = '$' . (^'$' | '\$')* . '$';
-#  qs7  = '%' . (^'%' | '\%')* . '%';  qs8  = '^' . (^'^' | '\^')* . '^';
-#  qs9  = '&' . (^'&' | '\&')* . '&';  qs10 = '*' . (^'*' | '\*')* . '*';
-#  qs11 = '-' . (^'-' | '\-')* . '-';  qs12 = '_' . (^'_' | '\_')* . '_';
-#  qs13 = '+' . (^'+' | '\+')* . '+';  qs14 = '=' . (^'=' | '\=')* . '=';
-#  qs15 = '<' . (^'>' | '\>')* . '>';  qs16 = '|' . (^'|' | '\|')* . '|';
-#  qs17 = ':' . (^':' | '\:')* . ':';  qs18 = ';' . (^';' | '\;')* . ';';
-#  qs19 = '"' . (^'"' | '\"')* . '"';  qs20 = "'" . (^"'" | "\'")* . "'";
-#  qs21 = ',' . (^',' | '\,')* . ',';  qs22 = '.' . (^'.' | '\.')* . '.';
-#  qs23 = '?' . (^'?' | '\?')* . '?';  qs24 = '/' . (^'/' | '\/')* . '/';
-#  qs25 = '{' . (^'}' | '\}')* . '}';  qs26 = '[' . (^']' | '\]')* . ']';
-#  qs27 = '(' . (^')' | '\)')* . ')';  qs28 = '\\' . (^'\\' | '\\\\')* . '\\';
-
-#  qs1  = '~' . ^'~'* . '~'; qs2  = '`' . ^'`'* . '`';
-#  qs3  = '!' . ^'!'* . '!';  qs4  = '@' . ^'@'* . '@';
-#  qs5  = '#' . ^'#'* . '#';  qs6  = '$' . ^'$'* . '$';
-#  qs7  = '%' . ^'%'* . '%';  qs8  = '^' . ^'^'* . '^';
-#  qs9  = '&' . ^'&'* . '&';  qs10 = '*' . ^'*'* . '*';
-#  qs11 = '-' . ^'-'* . '-';  qs12 = '_' . ^'_'* . '_';
-#  qs13 = '+' . ^'+'* . '+';  qs14 = '=' . ^'='* . '=';
-#  qs15 = '<' . ^'>'* . '>';  qs16 = '|' . ^'|'* . '|';
-#  qs17 = ':' . ^':'* . ':';  qs18 = ';' . ^';'* . ';';
-#  qs19 = '"' . ^'"'* . '"';  qs20 = "'" . ^"'"* . "'";
-#  qs21 = ',' . ^','* . ',';  qs22 = '.' . ^'.'* . '.';
-#  qs23 = '?' . ^'?'* . '?';  qs24 = '/' . ^'/'* . '/';
-#  qs25 = '{' . ^'}'* . '}';  qs26 = '[' . ^']'* . ']';
-#  qs27 = '(' . ^')'* . ')';  qs28 = '\\' . ^'\\'* . '\\';
-
-  # NASTY mess for string delimiters
+  # String delimiters
   qs1  = '~' . (zlen | [^\~]* | ([^\~]*[\\][\~][^\~]*)*) . '~';
   qs2  = '`' . (zlen | [^\`]* | ([^\`]*[\\][\`][^\`]*)*) . '`';
   qs3  = '!' . (zlen | [^\!]* | ([^\!]*[\\][\!][^\!]*)*) . '!';
@@ -121,19 +97,19 @@ module Sourcify
   qs27 = '(' . (zlen | [^\)]* | ([^\)]*[\\][\)][^\)]*)*) . ')';
   qs28 = '\\' . (zlen | [^\\]* | ([^\)]*[\\][\\][^\\]*)*) . '\\';
 
-  # NASTY mess for single quoted strings
+  # Single quote strings are pretty straight-forward, cos no embedding/interpolation
+  # support is required.
   sqs      = ('%q' | '%w');
-  sq_str1  = qs20;
-  sq_str2  = sqs . qs1;   sq_str3  = sqs . qs2;   sq_str4  = sqs . qs3;
-  sq_str5  = sqs . qs4;   sq_str6  = sqs . qs5;   sq_str7  = sqs . qs6;
-  sq_str8  = sqs . qs7;   sq_str9  = sqs . qs8;   sq_str10 = sqs . qs9;
-  sq_str11 = sqs . qs10;  sq_str12 = sqs . qs11;  sq_str13 = sqs . qs12;
-  sq_str14 = sqs . qs13;  sq_str15 = sqs . qs14;  sq_str16 = sqs . qs15;
-  sq_str17 = sqs . qs16;  sq_str18 = sqs . qs17;  sq_str19 = sqs . qs18;
-  sq_str20 = sqs . qs19;  sq_str21 = sqs . qs20;  sq_str22 = sqs . qs21;
-  sq_str23 = sqs . qs22;  sq_str24 = sqs . qs23;  sq_str25 = sqs . qs24;
-  sq_str26 = sqs . qs25;  sq_str27 = sqs . qs26;  sq_str28 = sqs . qs27;
-  sq_str29 = sqs . qs28;
+  sq_str1  = qs20;        sq_str2  = sqs . qs1;   sq_str3  = sqs . qs2;
+  sq_str4  = sqs . qs3;   sq_str5  = sqs . qs4;   sq_str6  = sqs . qs5;
+  sq_str7  = sqs . qs6;   sq_str8  = sqs . qs7;   sq_str9  = sqs . qs8;
+  sq_str10 = sqs . qs9;   sq_str11 = sqs . qs10;  sq_str12 = sqs . qs11;
+  sq_str13 = sqs . qs12;  sq_str14 = sqs . qs13;  sq_str15 = sqs . qs14;
+  sq_str16 = sqs . qs15;  sq_str17 = sqs . qs16;  sq_str18 = sqs . qs17;
+  sq_str19 = sqs . qs18;  sq_str20 = sqs . qs19;  sq_str21 = sqs . qs20;
+  sq_str22 = sqs . qs21;  sq_str23 = sqs . qs22;  sq_str24 = sqs . qs23;
+  sq_str25 = sqs . qs24;  sq_str26 = sqs . qs25;  sq_str27 = sqs . qs26;
+  sq_str28 = sqs . qs27;  sq_str29 = sqs . qs28;
   single_quote_strs  = (
     sq_str1  | sq_str2  | sq_str3  | sq_str4  | sq_str5  |
     sq_str6  | sq_str7  | sq_str8  | sq_str9  | sq_str10 |
@@ -143,9 +119,8 @@ module Sourcify
     sq_str26 | sq_str27 | sq_str28 | sq_str29
   );
 
-  # NASTY mess for double quote strings
-  # (currently we don't care abt interpolation, cos it is not a good
-  # practice to put complicated stuff (eg. proc) within interpolation)
+  # Double quote strings are more tedious to work with, because of
+  # embedding/interpolation issues.
   dqs      = ('%Q' | '%W' | '%' | '%r' | '%x');
   dq_str1  = qs19;        dq_str2  = qs2;         dq_str3  = qs24;
   dq_str4  = dqs . qs1;   dq_str5  = dqs . qs2;   dq_str6  = dqs . qs3;
@@ -168,55 +143,172 @@ module Sourcify
     dq_str31
   );
 
-  # Heredoc. Currently, disabling keywords as heredoc tag can potentially be a bug, since
-  # ruby allows keyword as heredoc tag, though it is a bad practice to do it. Anyway, we'll
-  # fix this if there is really a significant number of people using keywords as heredoc tag.
-  hchar1         = [A-Za-z\_];
-  hchar2         = [A-Za-z0-9\_];
-  heredoc_tag    = (hchar1 . hchar2{,1} | (hchar1 . hchar2{2}) - keywords | hchar1 . hchar2{3,});
-  heredoc_begin  = ('<<' | '<<-') . heredoc_tag . newline;
-  heredoc_end    = newline . spaces . heredoc_tag . newline;
+#
+#
+#  keywords      = (
+#    kw_do | kw_end | kw_begin | kw_case | kw_while | kw_until |
+#    kw_for | kw_if | kw_unless | kw_class | kw_module | kw_def
+#  );
+#
+#  lbrace        = '{';
+#  rbrace        = '}';
+#  lparen        = '(';
+#  rparen        = ')';
+#
+#  lvar          = [a-z_][a-zA-Z0-9_]* - keywords;
+#  ovars         = ('@' | '@@' | '$') . lvar;
+#  symbol        = ':' . (lvar | ovars);
+#  label         = lvar . ':';
+#  constant      = [A-Z_][a-zA-Z0-9_]*;
+#  newline       = '\n';
+#
+#  assoc         = '=>';
+#  assgn         = '=';
+#  smcolon       = ';';
+#  spaces        = ' '*;
+#  line_start1   = newline . spaces;
+#  line_start2   = (smcolon | lparen) . spaces;
+#  line_start    = (line_start1 | line_start2);
+#  modifier      = (kw_if | kw_unless | kw_while | kw_until);
+#  squote        = "'";
+#  dquote        = '"';
+#
+#  line_comment  = '#' . ^newline* . newline;
+#  block_comment = newline . '=begin' . ^newline* . newline . any* . newline . '=end' . ^newline* . newline;
+#  comments      = (line_comment | block_comment);
+#
+#  cfrag1        = '<<' . spaces . (^spaces & ^newline)+;
+#  cfrag2        = constant . spaces . '<' . spaces . constant;
+#  cfrag3        = constant;
+#  declare_class = kw_class . spaces . (cfrag1 | cfrag2 | cfrag3);
+#
+#  do_block_start    = kw_do;
+#  do_block_end      = kw_end;
+#  do_block_nstart1a = line_start1 . (declare_class | kw_if | kw_unless | kw_module | kw_def | kw_begin | kw_case);
+#  do_block_nstart1b = line_start2 . (declare_class | kw_if | kw_unless | kw_module | kw_def | kw_begin | kw_case);
+#  do_block_nstart2a = line_start1 . (kw_while | kw_until | kw_for);
+#  do_block_nstart2b = line_start2 . (kw_while | kw_until | kw_for);
+#
+##  qs1  = '~' . (^'~' | '\~')* . '~';  qs2  = '`' . (^'`' | '\`')* . '`';
+##  qs3  = '!' . (^'!' | '\!')* . '!';  qs4  = '@' . (^'@' | '\@')* . '@';
+##  qs5  = '#' . (^'#' | '\#')* . '#';  qs6  = '$' . (^'$' | '\$')* . '$';
+##  qs7  = '%' . (^'%' | '\%')* . '%';  qs8  = '^' . (^'^' | '\^')* . '^';
+##  qs9  = '&' . (^'&' | '\&')* . '&';  qs10 = '*' . (^'*' | '\*')* . '*';
+##  qs11 = '-' . (^'-' | '\-')* . '-';  qs12 = '_' . (^'_' | '\_')* . '_';
+##  qs13 = '+' . (^'+' | '\+')* . '+';  qs14 = '=' . (^'=' | '\=')* . '=';
+##  qs15 = '<' . (^'>' | '\>')* . '>';  qs16 = '|' . (^'|' | '\|')* . '|';
+##  qs17 = ':' . (^':' | '\:')* . ':';  qs18 = ';' . (^';' | '\;')* . ';';
+##  qs19 = '"' . (^'"' | '\"')* . '"';  qs20 = "'" . (^"'" | "\'")* . "'";
+##  qs21 = ',' . (^',' | '\,')* . ',';  qs22 = '.' . (^'.' | '\.')* . '.';
+##  qs23 = '?' . (^'?' | '\?')* . '?';  qs24 = '/' . (^'/' | '\/')* . '/';
+##  qs25 = '{' . (^'}' | '\}')* . '}';  qs26 = '[' . (^']' | '\]')* . ']';
+##  qs27 = '(' . (^')' | '\)')* . ')';  qs28 = '\\' . (^'\\' | '\\\\')* . '\\';
+#
+##  qs1  = '~' . ^'~'* . '~'; qs2  = '`' . ^'`'* . '`';
+##  qs3  = '!' . ^'!'* . '!';  qs4  = '@' . ^'@'* . '@';
+##  qs5  = '#' . ^'#'* . '#';  qs6  = '$' . ^'$'* . '$';
+##  qs7  = '%' . ^'%'* . '%';  qs8  = '^' . ^'^'* . '^';
+##  qs9  = '&' . ^'&'* . '&';  qs10 = '*' . ^'*'* . '*';
+##  qs11 = '-' . ^'-'* . '-';  qs12 = '_' . ^'_'* . '_';
+##  qs13 = '+' . ^'+'* . '+';  qs14 = '=' . ^'='* . '=';
+##  qs15 = '<' . ^'>'* . '>';  qs16 = '|' . ^'|'* . '|';
+##  qs17 = ':' . ^':'* . ':';  qs18 = ';' . ^';'* . ';';
+##  qs19 = '"' . ^'"'* . '"';  qs20 = "'" . ^"'"* . "'";
+##  qs21 = ',' . ^','* . ',';  qs22 = '.' . ^'.'* . '.';
+##  qs23 = '?' . ^'?'* . '?';  qs24 = '/' . ^'/'* . '/';
+##  qs25 = '{' . ^'}'* . '}';  qs26 = '[' . ^']'* . ']';
+##  qs27 = '(' . ^')'* . ')';  qs28 = '\\' . ^'\\'* . '\\';
+#
+#
+#  # NASTY mess for double quote strings
+#  # (currently we don't care abt interpolation, cos it is not a good
+#  # practice to put complicated stuff (eg. proc) within interpolation)
+#
+#  # Heredoc. Currently, disabling keywords as heredoc tag can potentially be a bug, since
+#  # ruby allows keyword as heredoc tag, though it is a bad practice to do it. Anyway, we'll
+#  # fix this if there is really a significant number of people using keywords as heredoc tag.
+#  hchar1         = [A-Za-z\_];
+#  hchar2         = [A-Za-z0-9\_];
+#  heredoc_tag    = (hchar1 . hchar2{,1} | (hchar1 . hchar2{2}) - keywords | hchar1 . hchar2{3,});
+#  heredoc_begin  = ('<<' | '<<-') . heredoc_tag . newline;
+#  heredoc_end    = newline . spaces . heredoc_tag . newline;
 
   main := |*
 
-    do_block_start    => { push(k = :do_block_start, ts, te); increment_counter(k, :do_end) };
-    do_block_end      => { push(k = :do_block_end, ts, te); decrement_counter(k, :do_end) };
-    do_block_nstart1b => { push(k = :do_block_nstart1, ts, te); increment_counter(k, :do_end) };
-    do_block_nstart2b => { push(k = :do_block_nstart2, ts, te); increment_counter(k, :do_end) };
+    do_block_start => {
+      push(k = :do_block_start, ts, te)
+      increment_counter(k, :do_end)
+    };
 
-    do_block_nstart1a => {
-      push(k = :do_block_nstart1, ts, te)
+    do_block_end => {
+      push(k = :do_block_end, ts, te)
+      decrement_counter(k, :do_end)
+    };
+
+    do_block_mstart_wo_nl => {
+      push(k = :do_block_mstart, ts, te)
+      increment_counter(k, :do_end)
+    };
+
+    do_block_ostart_wo_nl => {
+      push(k = :do_block_ostart, ts, te);
+      increment_counter(k, :do_end)
+    };
+
+    do_block_mstart_w_nl => {
+      push(k = :do_block_mstart, ts, te)
       increment_counter(k, :do_end)
       increment_line
     };
 
-    do_block_nstart2a => {
-      push(k = :do_block_nstart2, ts, te)
+    do_block_ostart_w_nl => {
+      push(k = :do_block_ostart, ts, te)
       increment_counter(k, :do_end)
       increment_line
     };
 
-    lbrace => { push(:lbrace, ts, te); increment_counter(:brace_block_start, :brace) };
-    rbrace => { push(:rbrace, ts, te); decrement_counter(:brace_block_end, :brace) };
+    lbrace => {
+      push(:lbrace, ts, te)
+      increment_counter(:brace_block_start, :brace)
+    };
+
+    rbrace => {
+      push(:rbrace, ts, te)
+      decrement_counter(:brace_block_end, :brace)
+    };
+
+    newline  => {
+      push(:newline, ts, te)
+      increment_line
+    };
+
+    assoc    => {
+      push(:assoc, ts, te)
+      fix_counter_false_start(:brace)
+    };
+
+    label    => {
+      push(:label, ts, te)
+      fix_counter_false_start(:brace)
+    };
+
+    heredoc_start => {
+      push(:heredoc_start, ts, te)
+      increment_line
+    };
+
+    single_quote_strs => { push(:squote_str, ts, te) };
+    double_quote_strs => { push(:dquote_str, ts, te) };
 
     modifier => { push(:modifier, ts, te) };
     lparen   => { push(:lparen, ts, te) };
     rparen   => { push(:rparen, ts, te) };
     smcolon  => { push(:smcolon, ts, te) };
-    newline  => { push(:newline, ts, te); increment_line };
-    lvar     => { push(:lvar, ts, te) };
-    ovars    => { push(:ovars, ts, te) };
+    var      => { push(:var, ts, te) };
+    const    => { push(:const, ts, te) };
     symbol   => { push(:symbol, ts, te) };
-    assoc    => { push(:assoc, ts, te); fix_counter_false_start(:brace) };
-    label    => { push(:label, ts, te); fix_counter_false_start(:brace) };
 
-    single_quote_strs => { push(:squote_str, ts, te) };
-    double_quote_strs => { push(:dquote_str, ts, te) };
-    heredoc_begin     => { push(:heredoc_begin, ts, te); increment_line };
-    heredoc_end       => { push(:heredoc_end, ts, te); increment_line };
-
-    #comments => { push(:comment, ts, te); increment_line };
-    (' '+)   => { push(:spaces, ts, te) };
+    mspaces  => { push(:spaces, ts, te) };
     any      => { push(:any, ts, te) };
   *|;
 
