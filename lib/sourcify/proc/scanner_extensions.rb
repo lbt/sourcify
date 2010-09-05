@@ -18,41 +18,49 @@ module Sourcify
 
         def push(key, ts, te)
           data = @data[ts .. te.pred].pack('c*')
-          puts '', key, data
-          case key
-          when :label
-            # NOTE: 1.9.* supports label key, which RubyParser cannot handle, thus
-            # conversion is needed.
-            @tokens << data.sub(/^(.*)\:$/, ':\1') << ' ' << '=>'
-            @keys << :symbol << :any << :assoc
-          when :heredoc_begin
-            # NOTE: Ragel doesn't support back-referencing, that's why we need to take
-            # special care for heredoc
-            m = data.match(/\<\<(\-?)(\w+)\s*$/)[1..2]
-            @heredoc = {:begin => @tokens.size, :tag => m[1], :indent => !m[0].empty?}
-            @tokens << data
-            @keys << :any
-          when :heredoc_end
-            # NOTE: This may or may not be end of the heredoc, extra care needs to be
-            # taken to ensure this is really what we want.
-            indent, tag, index = [:indent, :tag, :begin].map{|k| @heredoc[k] } rescue nil
-            if (indent && data.strip == tag) or (!indent && data == "\n#{tag}\n")
-              @heredoc = nil
-              @keys.slice!(index .. -1)
-              @tokens << (@tokens.slice!(index .. -1) << data).join
-              @keys << :heredoc
-            else
-              @keys << key
-              @tokens << data
-            end
-          else
+          begin
+            key = :lvar if key == :heredoc_end && @heredoc.nil?
+            send(:"push_#{key}", data)
+          rescue
             @keys << key
             @tokens << data
           end
         end
 
+        def push_label(data)
+          # NOTE: 1.9.* supports label key, which RubyParser cannot handle, thus
+          # conversion is needed.
+          @tokens << data.sub(/^(.*)\:$/, ':\1') << ' ' << '=>'
+          @keys << :symbol << :any << :assoc
+        end
+
+        def push_heredoc_begin(data)
+          # NOTE: Ragel doesn't support back-referencing, that's why we need to take
+          # special care for heredoc
+          m = data.match(/\<\<(\-?)(\w+)\s*$/)[1..2]
+          increment_line
+          @heredoc = {:begin => @tokens.size, :tag => m[1], :indent => !m[0].empty?}
+          @tokens << data
+          @keys << :any
+        end
+
+        def push_heredoc_end(data)
+          indent, tag, index = [:indent, :tag, :begin].map{|k| @heredoc[k] } rescue nil
+          if (indent && data.strip == tag) or (!indent && data == "\n#{tag}\n")
+            @heredoc = nil
+            @keys.slice!(index .. -1)
+            @tokens << (@tokens.slice!(index .. -1) << data).join
+            @keys << :heredoc
+          else
+            @keys << :heredoc_false_end
+            @tokens << data
+          end
+        end
+
         def increment_line
+          puts '', 'increment_line (before) ... %s' % @lineno
           @lineno += 1
+          puts '', 'increment_line (after) ... %s' % @lineno
           raise Escape unless @results.empty?
         end
 
@@ -67,8 +75,10 @@ module Sourcify
         def increment_do_end_counter(type)
           return if @brace_counter.started?
           case type
-          when :do_block_nstart1 then @do_end_counter.increment
-          when :do_block_nstart2 then @do_end_counter.increment(0..1)
+          when :do_block_nstart1
+            @do_end_counter.increment if @do_end_counter.started?
+          when :do_block_nstart2
+            @do_end_counter.increment(0..1) if @do_end_counter.started?
           when :do_block_start
             offset_attributes unless @do_end_counter.started?
             @do_end_counter.increment
@@ -77,7 +87,9 @@ module Sourcify
 
         def decrement_do_end_counter
           return unless @do_end_counter.started?
+          puts '', 'before decrement_do_end_counter = %s, %s' % @do_end_counter.counts
           @do_end_counter.decrement
+          puts '', 'after decrement_do_end_counter = %s, %s' % @do_end_counter.counts
           construct_result_code if @do_end_counter.balanced?
         end
 
@@ -103,6 +115,7 @@ module Sourcify
           begin
             code = 'proc ' + @tokens.join
             eval(code) # TODO: is there a better way to check for SyntaxError ?
+            puts '', code
             @results << code
             raise Escape unless @lineno == 1
             reset_attributes
@@ -114,6 +127,7 @@ module Sourcify
           @tokens = []
           @keys = []
           @lineno = 1
+          @heredoc = nil
           @do_end_counter = Counter.new
           @brace_counter = Counter.new
         end

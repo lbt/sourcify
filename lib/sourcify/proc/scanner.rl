@@ -17,13 +17,17 @@ module Sourcify
   kw_class      = 'class';
   kw_module     = 'module';
   kw_def        = 'def';
+  keywords      = (
+    kw_do | kw_end | kw_begin | kw_case | kw_while | kw_until |
+    kw_for | kw_if | kw_unless | kw_class | kw_module | kw_def
+  );
 
   lbrace        = '{';
   rbrace        = '}';
   lparen        = '(';
   rparen        = ')';
 
-  lvar          = [a-z_][a-zA-Z0-9_]*;
+  lvar          = [a-z_][a-zA-Z0-9_]* - keywords;
   ovars         = ('@' | '@@' | '$') . lvar;
   symbol        = ':' . (lvar | ovars);
   label         = lvar . ':';
@@ -34,7 +38,9 @@ module Sourcify
   assgn         = '=';
   smcolon       = ';';
   spaces        = ' '*;
-  line_start    = (newline | smcolon | lparen) . spaces;
+  line_start1   = newline . spaces;
+  line_start2   = (smcolon | lparen) . spaces;
+  line_start    = (line_start1 | line_start2);
   modifier      = (kw_if | kw_unless | kw_while | kw_until);
   squote        = "'";
   dquote        = '"';
@@ -50,8 +56,10 @@ module Sourcify
 
   do_block_start    = kw_do;
   do_block_end      = kw_end;
-  do_block_nstart1  = line_start . (declare_class | kw_if | kw_unless | kw_module | kw_def | kw_begin | kw_case);
-  do_block_nstart2  = line_start . (kw_while | kw_until | kw_for);
+  do_block_nstart1a = line_start1 . (declare_class | kw_if | kw_unless | kw_module | kw_def | kw_begin | kw_case);
+  do_block_nstart1b = line_start2 . (declare_class | kw_if | kw_unless | kw_module | kw_def | kw_begin | kw_case);
+  do_block_nstart2a = line_start1 . (kw_while | kw_until | kw_for);
+  do_block_nstart2b = line_start2 . (kw_while | kw_until | kw_for);
 
 #  qs1  = '~' . (^'~' | '\~')* . '~';  qs2  = '`' . (^'`' | '\`')* . '`';
 #  qs3  = '!' . (^'!' | '\!')* . '!';  qs4  = '@' . (^'@' | '\@')* . '@';
@@ -161,16 +169,28 @@ module Sourcify
   );
 
   # Heredoc
-  heredoc_tag    = [A-Za-z\_][A-Za-z0-9\_]*;
+  heredoc_tag    = [A-Za-z\_][A-Za-z0-9\_]* - keywords;
   heredoc_begin  = ('<<' | '<<-') . heredoc_tag . newline;
-  heredoc_end    = newline . spaces . heredoc_tag . newline;
+  heredoc_end    = (newline . spaces . heredoc_tag . newline) - keywords;
 
   main := |*
 
-    do_block_start   => { push(k = :do_block_start, ts, te); increment_counter(k, :do_end) };
-    do_block_end     => { push(k = :do_block_end, ts, te); decrement_counter(k, :do_end) };
-    do_block_nstart1 => { push(k = :do_block_nstart1, ts, te); increment_counter(k, :do_end) };
-    do_block_nstart2 => { push(k = :do_block_nstart2, ts, te); increment_counter(k, :do_end) };
+    do_block_start    => { push(k = :do_block_start, ts, te); increment_counter(k, :do_end) };
+    do_block_end      => { push(k = :do_block_end, ts, te); decrement_counter(k, :do_end) };
+    do_block_nstart1b => { push(k = :do_block_nstart2, ts, te); increment_counter(k, :do_end) };
+    do_block_nstart2b => { push(k = :do_block_nstart2, ts, te); increment_counter(k, :do_end) };
+
+    do_block_nstart1a => {
+      push(k = :do_block_nstart1, ts, te)
+      increment_counter(k, :do_end)
+      increment_line
+    };
+
+    do_block_nstart2a => {
+      push(k = :do_block_nstart2, ts, te)
+      increment_counter(k, :do_end)
+      increment_line
+    };
 
     lbrace => { push(:lbrace, ts, te); increment_counter(:brace_block_start, :brace) };
     rbrace => { push(:rbrace, ts, te); decrement_counter(:brace_block_end, :brace) };
@@ -180,8 +200,8 @@ module Sourcify
     rparen   => { push(:rparen, ts, te) };
     smcolon  => { push(:smcolon, ts, te) };
     newline  => { push(:newline, ts, te); increment_line };
-    lvar     => { push(:lvar_or_meth, ts, te) };
-    ovars    => { push(:other_vars, ts, te) };
+    lvar     => { push(:lvar, ts, te) };
+    ovars    => { push(:ovars, ts, te) };
     symbol   => { push(:symbol, ts, te) };
     assoc    => { push(:assoc, ts, te); fix_counter_false_start(:brace) };
     label    => { push(:label, ts, te); fix_counter_false_start(:brace) };
