@@ -4,7 +4,7 @@ require 'rubygems'
 require 'bacon'
 Bacon.summary_on_exit
 
-rl_dir = File.dirname(File.expand_path(__FILE__));
+rl_dir = File.join(File.dirname(File.expand_path(__FILE__)), '..');
 rl_file = File.join(rl_dir, 'scanner.rl')
 rb_file = File.join(rl_dir, 'scanner.rb')
 
