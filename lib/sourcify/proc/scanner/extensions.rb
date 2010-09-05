@@ -1,5 +1,6 @@
 curr_dir = File.dirname(__FILE__)
 require File.join(curr_dir, 'heredoc')
+require File.join(curr_dir, 'comment')
 require File.join(curr_dir, 'counter')
 
 module Sourcify
@@ -21,28 +22,36 @@ module Sourcify
 
         def push(key, ts, te)
           data = data_frag(ts .. te.pred)
-          if @heredoc
-            push_heredoc_content(data, data_frag(te .. te))
-          elsif respond_to?(dpush = :"push_#{key}")
-            send(dpush, data)
-          else
-            @keys << key
-            @tokens << data
-          end
+          @keys << key
+          @tokens << data_frag(ts .. te.pred)
         end
 
         def data_frag(range)
           @data[range].pack('c*')
         end
 
+        def push_comment(ts, te)
+          data = data_frag(ts .. te.pred)
+          if @comment.nil?
+            @comment = Comment.new
+            @comment << data
+          else
+            @comment << data
+            return true unless @comment.closed?(data_frag(te .. te))
+            @tokens << @comment.to_s
+            @keys << :comment
+            @comment = nil
+          end
+        end
+
         def push_heredoc(ts, te)
+          data = data_frag(ts .. te.pred)
           if @heredoc.nil?
-            data = data_frag(ts .. te.pred)
             indented, tag = data.match(/\<\<(\-?)['"]?(\w+)['"]?$/)[1..3]
             @heredoc = Heredoc.new(tag, !indented.empty?)
             @heredoc << data
           else
-            @heredoc << data_frag(ts .. te.pred)
+            @heredoc << data
             return true unless @heredoc.closed?(data_frag(te .. te))
             @tokens << @heredoc.to_s
             @keys << :heredoc

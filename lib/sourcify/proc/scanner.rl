@@ -24,6 +24,15 @@ module Sourcify
     };
   *|;
 
+  ## Block comment
+  block_comment := |*
+    any* . newline . '=end' . ospaces => {
+      unless push_comment(ts, te)
+        fgoto main;
+      end
+    };
+  *|;
+
   ## Heredoc
   heredoc := |*
     ^newline* . newline . ospaces . ^newline+ => {
@@ -38,6 +47,13 @@ module Sourcify
     ## Per line comment
     '#' => {
       fgoto per_line_comment;
+    };
+
+    ## Block comment
+    newline . '=begin' . ospaces . (ospaces . ^newline+)* . newline => {
+      push_comment(ts, te)
+      increment_line
+      fgoto block_comment;
     };
 
     ## Heredoc
