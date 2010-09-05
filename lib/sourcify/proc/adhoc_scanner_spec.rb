@@ -34,67 +34,43 @@ describe 'Single quote strings' do
   ).each do |q1,q2|
     %w{q w}.each do |t|
 
-      should "handle '%#{t}#{q1}...#{q2}' (wo escape)" do
-        process(<<-EOL
-          %#{t}#{q1}hello#{q2}
-EOL
-        ).should.include((<<-EOL
-          %#{t}#{q1}hello#{q2}
-EOL
-        ).strip)
+      should "handle '%#{t}#{q1}...#{q2}' (wo escape (single))" do
+        process(" %#{t}#{q1}hello#{q2} ").should.include("%#{t}#{q1}hello#{q2}")
       end
 
-#        should "handle '%#{t}#{q1}...#{q2}' (w escape)" do
-#          process(<<-EOL
-#            %#{t}#{q1}hel\\#{q2}lo#{q2}
-#EOL
-#          ).should.include((<<-EOL
-#            %#{t}#{q1}hel\\#{q2}lo#{q2}
-#EOL
-#          ).strip)
-#        end
+      should "handle '%#{t}#{q1}...#{q2}' (wo escape (multiple))" do
+        tokens = process(" %#{t}#{q1}hello#{q2} %#{t}#{q1}world#{q2} ")
+        tokens.should.include("%#{t}#{q1}hello#{q2}")
+        tokens.should.include("%#{t}#{q1}world#{q2}")
+      end
 
-      should "handle '%#{t}#{q1}...#{q2}' (wo escape & multiple)" do
-        process(<<-EOL
-          %#{t}#{q1}hello#{q2} %#{t}#{q1}world#{q2}
-EOL
-        ).should.include((<<-EOL
-          %#{t}#{q1}hello#{q2}
-EOL
-        ).strip)
+      should "handle '%#{t}#{q1}...#{q2}' (w escape (single))" do
+        process(" %#{t}#{q1}hel\\#{q2}lo#{q2} ").should.include("%#{t}#{q1}hel\\#{q2}lo#{q2}")
+      end
+
+      should "handle '%#{t}#{q1}...#{q2}' (w escape (multiple))" do
+        process(" %#{t}#{q1}h\\#{q2}el\\#{q2}lo#{q2} ").should.include("%#{t}#{q1}h\\#{q2}el\\#{q2}lo#{q2}")
       end
 
     end
   end
 
-  should "handle '...' (wo escape)" do
-    process(<<-EOL
-      'hello'
-EOL
-    ).should.include((<<-EOL
-      'hello'
-EOL
-    ).strip)
+  should "handle '...' (wo escape (single))" do
+    process(" 'hello' ").should.include("'hello'")
   end
 
-#    should "handle '...' (w escape)" do
-#      process(<<-EOL
-#        'hel\'lo'
-#EOL
-#      ).should.include((<<-EOL
-#        'hel\'lo'
-#EOL
-#      ).strip)
-#    end
+  should "handle '...' (wo escape (multiple))" do
+    tokens = process(" 'hello' 'world' ")
+    tokens.should.include("'hello'")
+    tokens.should.include("'world'")
+  end
 
-  should "handle '...' (wo escape & multiple)" do
-    process(<<-EOL
-      'hello' 'world'
-EOL
-    ).should.include((<<-EOL
-      'hello'
-EOL
-    ).strip)
+  should "handle '...' (w escape (single))" do
+    process(" 'hel\\'lo' ").should.include("'hel\\'lo'")
+  end
+
+  should "handle '...' (w escape (multiple))" do
+    process(" 'h\\'el\\'lo' ").should.include("'h\\'el\\'lo'")
   end
 
 end
@@ -106,34 +82,22 @@ describe 'Double quote strings (wo interpolation)' do
   ).each do |q1,q2|
     %w{Q W x r}.each do |t|
 
-      should "handle '%#{t}#{q1}...#{q2}' (wo escape)" do
-        process(<<-EOL
-          %#{t}#{q1}hello#{q2}
-EOL
-        ).should.include((<<-EOL
-          %#{t}#{q1}hello#{q2}
-EOL
-        ).strip)
+      should "handle '%#{t}#{q1}...#{q2}' (wo escape (single))" do
+        process("  %#{t}#{q1}hello#{q2}  ").should.include("%#{t}#{q1}hello#{q2}")
       end
 
-#        should "handle '%#{t}#{q1}...#{q2}' (w escape)" do
-#          process(<<-EOL
-#            %#{t}#{q1}hel\\#{q2}lo#{q2}
-#EOL
-#          ).should.include((<<-EOL
-#            %#{t}#{q1}hel\\#{q2}lo#{q2}
-#EOL
-#          ).strip)
-#        end
+      should "handle '%#{t}#{q1}...#{q2}' (wo escape (multiple))" do
+        tokens = process("  %#{t}#{q1}hello#{q2} %#{t}#{q1}world#{q2}  ")
+        tokens.should.include("%#{t}#{q1}hello#{q2}")
+        tokens.should.include("%#{t}#{q1}world#{q2}")
+      end
 
-      should "handle '%#{t}#{q1}...#{q2}' (wo escape & multiple)" do
-        process(<<-EOL
-          %#{t}#{q1}hello#{q2} %#{t}#{q1}world#{q2}
-EOL
-        ).should.include((<<-EOL
-          %#{t}#{q1}hello#{q2}
-EOL
-        ).strip)
+      should "handle '%#{t}#{q1}...#{q2}' (w escape (single))" do
+        process(" %#{t}#{q1}hel\\#{q2}lo#{q2} ").should.include("%#{t}#{q1}hel\\#{q2}lo#{q2}")
+      end
+
+      should "handle '%#{t}#{q1}...#{q2}' (w escape (multiple))" do
+        process(" %#{t}#{q1}h\\#{q2}el\\#{q2}lo#{q2} ").should.include("%#{t}#{q1}h\\#{q2}el\\#{q2}lo#{q2}")
       end
 
     end
@@ -141,35 +105,23 @@ EOL
 
   %w{" / `}.each do |q|
 
-    should 'handle #{q}...#{q} (wo escape)' do
-      process(<<-EOL
-        #{q}hello#{q}
-EOL
-      ).should.include((<<-EOL
-        #{q}hello#{q}
-EOL
-      ).strip)
+    should 'handle #{q}...#{q} (wo escape (single))' do
+      process(%Q( #{q}hello#{q} )).should.include(%Q(#{q}hello#{q}))
     end
 
     should 'handle #{q}...#{q} (wo escape & multiple)' do
-      process(<<-EOL
-        #{q}hello#{q} #{q}world#{q}
-EOL
-      ).should.include((<<-EOL
-        #{q}hello#{q}
-EOL
-      ).strip)
+      tokens = process(%Q( #{q}hello#{q} #{q}world#{q} ))
+      tokens.should.include(%Q(#{q}hello#{q}))
+      tokens.should.include(%Q(#{q}world#{q}))
     end
 
-#      should 'handle #{q}...#{q} (w escape)' do
-#        process(<<-EOL
-#          #{q}hel\#{q}lo#{q}
-#EOL
-#        ).should.include((<<-EOL
-#          #{q}hel\#{q}lo#{q}
-#EOL
-#        ).strip)
-#      end
+    should 'handle #{q}...#{q} (w escape (single))' do
+      process(%Q( #{q}hel\\#{q}lo#{q} )).should.include(%Q(#{q}hel\\#{q}lo#{q}))
+    end
+
+    should 'handle #{q}...#{q} (w escape (multiple))' do
+      process(%Q( #{q}h\\#{q}el\\#{q}lo#{q} )).should.include(%Q(#{q}h\\#{q}el\\#{q}lo#{q}))
+    end
 
   end
 
