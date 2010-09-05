@@ -114,6 +114,7 @@ module Sourcify
         def construct_result_code
           begin
             code = 'proc ' + @tokens.join
+            puts '', code 
             eval(code) # TODO: is there a better way to check for SyntaxError ?
             puts '', code
             @results << code

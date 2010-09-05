@@ -168,7 +168,9 @@ module Sourcify
     dq_str31
   );
 
-  # Heredoc
+  # Heredoc. Currently, disabling keywords as heredoc tag can potentially be a bug, since
+  # ruby allows keyword as heredoc tag, though it is a bad practice to do it. Anyway, we'll
+  # fix this if there is really a significant number of people using keywords as heredoc tag.
   hchar1         = [A-Za-z\_];
   hchar2         = [A-Za-z0-9\_];
   heredoc_tag    = (hchar1 . hchar2{,1} | (hchar1 . hchar2{2}) - keywords | hchar1 . hchar2{3,});
@@ -179,7 +181,7 @@ module Sourcify
 
     do_block_start    => { push(k = :do_block_start, ts, te); increment_counter(k, :do_end) };
     do_block_end      => { push(k = :do_block_end, ts, te); decrement_counter(k, :do_end) };
-    do_block_nstart1b => { push(k = :do_block_nstart2, ts, te); increment_counter(k, :do_end) };
+    do_block_nstart1b => { push(k = :do_block_nstart1, ts, te); increment_counter(k, :do_end) };
     do_block_nstart2b => { push(k = :do_block_nstart2, ts, te); increment_counter(k, :do_end) };
 
     do_block_nstart1a => {
@@ -213,7 +215,7 @@ module Sourcify
     heredoc_begin     => { push(:heredoc_begin, ts, te); increment_line };
     heredoc_end       => { push(:heredoc_end, ts, te); increment_line };
 
-    comments => { push(:comment, ts, te); increment_line };
+    #comments => { push(:comment, ts, te); increment_line };
     (' '+)   => { push(:spaces, ts, te) };
     any      => { push(:any, ts, te) };
   *|;
