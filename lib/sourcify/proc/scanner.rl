@@ -83,6 +83,7 @@ module Sourcify
 #  qs25 = '{' . ^'}'* . '}';  qs26 = '[' . ^']'* . ']';
 #  qs27 = '(' . ^')'* . ')';  qs28 = '\\' . ^'\\'* . '\\';
 
+  # NASTY mess for string delimiters
   qs1  = '~' . (zlen | [^\~]* | ([^\~]*[\\][\~][^\~]*)*) . '~';
   qs2  = '`' . (zlen | [^\`]* | ([^\`]*[\\][\`][^\`]*)*) . '`';
   qs3  = '!' . (zlen | [^\!]* | ([^\!]*[\\][\!][^\!]*)*) . '!';
@@ -138,9 +139,7 @@ module Sourcify
   # (currently we don't care abt interpolation, cos it is not a good
   # practice to put complicated stuff (eg. proc) within interpolation)
   dqs      = ('%Q' | '%W' | '%' | '%r' | '%x');
-  dq_str1  = qs19; # double quote (")
-  dq_str2  = qs2;  # backtick (`)
-  dq_str3  = qs24; # forward slash (/)
+  dq_str1  = qs19;        dq_str2  = qs2;         dq_str3  = qs24;
   dq_str4  = dqs . qs1;   dq_str5  = dqs . qs2;   dq_str6  = dqs . qs3;
   dq_str7  = dqs . qs4;   dq_str8  = dqs . qs5;   dq_str9  = dqs . qs6;
   dq_str10 = dqs . qs7;   dq_str11 = dqs . qs8;   dq_str12 = dqs . qs9;
