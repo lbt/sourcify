@@ -7,41 +7,41 @@ module Sourcify
 %%{
   machine proc;
 
-  var_char1     = lower | '_';
-  var_char2     = var_char1 | upper | digit;
-  const_char1   = upper;
-  const_char2   = const_char1 | var_char2;
-  var           = var_char1 . var_char2*;
-  const         = const_char1 . const_char2*;
-  symbol        = ':' . (var | const);
+  vchar1    = lower | '_';
+  vchar2    = vchar1 | upper | digit;
+  cchar1    = upper;
+  cchar2    = cchar1 | vchar2;
+  var       = vchar1 . vchar2*;
+  const     = cchar1 . cchar2*;
+  symbol    = ':' . (var | const);
 
-  label         = (var | const) . ':';
-  assoc         = '=>';
+  label     = (var | const) . ':';
+  assoc     = '=>';
 
-  lbrace        = '{';
-  rbrace        = '}';
-  lparen        = '(';
-  rparen        = ')';
+  lbrace    = '{';
+  rbrace    = '}';
+  lparen    = '(';
+  rparen    = ')';
 
-  newline       = '\n';
-  mspaces       = ' '+;
-  ospaces       = ' '*;
-  smcolon       = ';';
+  newline   = '\n';
+  mspaces   = ' '+;
+  ospaces   = ' '*;
+  smcolon   = ';';
 
   ## Keywords for do ... end matching
 
-  kw_do         = 'do';
-  kw_end        = 'end';
-  kw_begin      = 'begin';
-  kw_case       = 'case';
-  kw_while      = 'while';
-  kw_until      = 'until';
-  kw_for        = 'for';
-  kw_if         = 'if';
-  kw_unless     = 'unless';
-  kw_class      = 'class';
-  kw_module     = 'module';
-  kw_def        = 'def';
+  kw_do     = 'do';
+  kw_end    = 'end';
+  kw_begin  = 'begin';
+  kw_case   = 'case';
+  kw_while  = 'while';
+  kw_until  = 'until';
+  kw_for    = 'for';
+  kw_if     = 'if';
+  kw_unless = 'unless';
+  kw_class  = 'class';
+  kw_module = 'module';
+  kw_def    = 'def';
 
   singleton_class  = kw_class . ospaces . '<<' . ospaces . ^space+;
   modifier         = kw_if | kw_unless | kw_while | kw_until;
@@ -60,6 +60,11 @@ module Sourcify
   do_block_mstart_wo_nl = line_start_wo_nl . kw_mblock;
   do_block_ostart_w_nl  = line_start_w_nl . kw_oblock;
   do_block_ostart_wo_nl = line_start_wo_nl . kw_oblock;
+
+  ## COMMENTS
+  #  line_comment  = '#' . ^newline* . newline;
+  #  block_comment = newline . '=begin' . ^newline* . newline . any* . newline . '=end' . ^newline* . newline;
+  #  comments      = (line_comment | block_comment);
 
   ## STRINGS
 
@@ -142,96 +147,6 @@ module Sourcify
     dq_str26 | dq_str27 | dq_str28 | dq_str29 | dq_str30 |
     dq_str31
   );
-
-#
-#
-#  keywords      = (
-#    kw_do | kw_end | kw_begin | kw_case | kw_while | kw_until |
-#    kw_for | kw_if | kw_unless | kw_class | kw_module | kw_def
-#  );
-#
-#  lbrace        = '{';
-#  rbrace        = '}';
-#  lparen        = '(';
-#  rparen        = ')';
-#
-#  lvar          = [a-z_][a-zA-Z0-9_]* - keywords;
-#  ovars         = ('@' | '@@' | '$') . lvar;
-#  symbol        = ':' . (lvar | ovars);
-#  label         = lvar . ':';
-#  constant      = [A-Z_][a-zA-Z0-9_]*;
-#  newline       = '\n';
-#
-#  assoc         = '=>';
-#  assgn         = '=';
-#  smcolon       = ';';
-#  spaces        = ' '*;
-#  line_start1   = newline . spaces;
-#  line_start2   = (smcolon | lparen) . spaces;
-#  line_start    = (line_start1 | line_start2);
-#  modifier      = (kw_if | kw_unless | kw_while | kw_until);
-#  squote        = "'";
-#  dquote        = '"';
-#
-#  line_comment  = '#' . ^newline* . newline;
-#  block_comment = newline . '=begin' . ^newline* . newline . any* . newline . '=end' . ^newline* . newline;
-#  comments      = (line_comment | block_comment);
-#
-#  cfrag1        = '<<' . spaces . (^spaces & ^newline)+;
-#  cfrag2        = constant . spaces . '<' . spaces . constant;
-#  cfrag3        = constant;
-#  declare_class = kw_class . spaces . (cfrag1 | cfrag2 | cfrag3);
-#
-#  do_block_start    = kw_do;
-#  do_block_end      = kw_end;
-#  do_block_nstart1a = line_start1 . (declare_class | kw_if | kw_unless | kw_module | kw_def | kw_begin | kw_case);
-#  do_block_nstart1b = line_start2 . (declare_class | kw_if | kw_unless | kw_module | kw_def | kw_begin | kw_case);
-#  do_block_nstart2a = line_start1 . (kw_while | kw_until | kw_for);
-#  do_block_nstart2b = line_start2 . (kw_while | kw_until | kw_for);
-#
-##  qs1  = '~' . (^'~' | '\~')* . '~';  qs2  = '`' . (^'`' | '\`')* . '`';
-##  qs3  = '!' . (^'!' | '\!')* . '!';  qs4  = '@' . (^'@' | '\@')* . '@';
-##  qs5  = '#' . (^'#' | '\#')* . '#';  qs6  = '$' . (^'$' | '\$')* . '$';
-##  qs7  = '%' . (^'%' | '\%')* . '%';  qs8  = '^' . (^'^' | '\^')* . '^';
-##  qs9  = '&' . (^'&' | '\&')* . '&';  qs10 = '*' . (^'*' | '\*')* . '*';
-##  qs11 = '-' . (^'-' | '\-')* . '-';  qs12 = '_' . (^'_' | '\_')* . '_';
-##  qs13 = '+' . (^'+' | '\+')* . '+';  qs14 = '=' . (^'=' | '\=')* . '=';
-##  qs15 = '<' . (^'>' | '\>')* . '>';  qs16 = '|' . (^'|' | '\|')* . '|';
-##  qs17 = ':' . (^':' | '\:')* . ':';  qs18 = ';' . (^';' | '\;')* . ';';
-##  qs19 = '"' . (^'"' | '\"')* . '"';  qs20 = "'" . (^"'" | "\'")* . "'";
-##  qs21 = ',' . (^',' | '\,')* . ',';  qs22 = '.' . (^'.' | '\.')* . '.';
-##  qs23 = '?' . (^'?' | '\?')* . '?';  qs24 = '/' . (^'/' | '\/')* . '/';
-##  qs25 = '{' . (^'}' | '\}')* . '}';  qs26 = '[' . (^']' | '\]')* . ']';
-##  qs27 = '(' . (^')' | '\)')* . ')';  qs28 = '\\' . (^'\\' | '\\\\')* . '\\';
-#
-##  qs1  = '~' . ^'~'* . '~'; qs2  = '`' . ^'`'* . '`';
-##  qs3  = '!' . ^'!'* . '!';  qs4  = '@' . ^'@'* . '@';
-##  qs5  = '#' . ^'#'* . '#';  qs6  = '$' . ^'$'* . '$';
-##  qs7  = '%' . ^'%'* . '%';  qs8  = '^' . ^'^'* . '^';
-##  qs9  = '&' . ^'&'* . '&';  qs10 = '*' . ^'*'* . '*';
-##  qs11 = '-' . ^'-'* . '-';  qs12 = '_' . ^'_'* . '_';
-##  qs13 = '+' . ^'+'* . '+';  qs14 = '=' . ^'='* . '=';
-##  qs15 = '<' . ^'>'* . '>';  qs16 = '|' . ^'|'* . '|';
-##  qs17 = ':' . ^':'* . ':';  qs18 = ';' . ^';'* . ';';
-##  qs19 = '"' . ^'"'* . '"';  qs20 = "'" . ^"'"* . "'";
-##  qs21 = ',' . ^','* . ',';  qs22 = '.' . ^'.'* . '.';
-##  qs23 = '?' . ^'?'* . '?';  qs24 = '/' . ^'/'* . '/';
-##  qs25 = '{' . ^'}'* . '}';  qs26 = '[' . ^']'* . ']';
-##  qs27 = '(' . ^')'* . ')';  qs28 = '\\' . ^'\\'* . '\\';
-#
-#
-#  # NASTY mess for double quote strings
-#  # (currently we don't care abt interpolation, cos it is not a good
-#  # practice to put complicated stuff (eg. proc) within interpolation)
-#
-#  # Heredoc. Currently, disabling keywords as heredoc tag can potentially be a bug, since
-#  # ruby allows keyword as heredoc tag, though it is a bad practice to do it. Anyway, we'll
-#  # fix this if there is really a significant number of people using keywords as heredoc tag.
-#  hchar1         = [A-Za-z\_];
-#  hchar2         = [A-Za-z0-9\_];
-#  heredoc_tag    = (hchar1 . hchar2{,1} | (hchar1 . hchar2{2}) - keywords | hchar1 . hchar2{3,});
-#  heredoc_begin  = ('<<' | '<<-') . heredoc_tag . newline;
-#  heredoc_end    = newline . spaces . heredoc_tag . newline;
 
   main := |*
 
