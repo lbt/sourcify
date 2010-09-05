@@ -160,7 +160,7 @@ describe 'Heredoc strings' do
 X
       cc
 EOL
-    ).should.include("<<-X\n        bb \nX\n")
+    ).should.include("<<-X\n        bb \nX")
   end
 
   should 'not handle <<-X\n .. \nX \n' do
@@ -171,7 +171,7 @@ EOL
 X 
       cc
 EOL
-    ).should.not.include("<<-X\n        bb \nX \n")
+    ).should.not.include("<<-X\n        bb \nX ")
   end
 
   should 'handle <<-X\n .. \n  X\n' do
@@ -182,7 +182,7 @@ EOL
   X
       cc
 EOL
-    ).should.include("<<-X\n        bb \n  X\n")
+    ).should.include("<<-X\n        bb \n  X")
   end
 
   should 'not handle <<-X\n .. \n  X \n' do
@@ -193,7 +193,7 @@ EOL
 X 
       cc
 EOL
-    ).should.not.include("<<-X\n        bb \n  X \n")
+    ).should.not.include("<<-X\n        bb \n  X ")
   end
 
   should 'handle <<X\n .. \nX' do
@@ -204,7 +204,7 @@ EOL
 X
       cc
 EOL
-    ).should.include("<<X\n        bb \nX\n")
+    ).should.include("<<X\n        bb \nX")
   end
 
   should 'not handle <<X\n .. \nX ' do
@@ -215,7 +215,7 @@ EOL
 X 
       cc
 EOL
-    ).should.not.include("<<X\n        bb \nX \n")
+    ).should.not.include("<<X\n        bb \nX ")
   end
 
   should 'not handle <<X\n .. \n  X' do
@@ -226,7 +226,7 @@ EOL
 X
       cc
 EOL
-    ).should.not.include("<<X\n       bb \n  X\n")
+    ).should.not.include("<<X\n       bb \n  X")
   end
 
   should 'not handle class <<X ..' do
@@ -237,7 +237,7 @@ EOL
 X
       cc
 EOL
-    ).should.not.include("<<X\n        bb \nX\n")
+    ).should.not.include("<<X\n        bb \nX")
   end
 
   should 'handle xclass <<X ..' do
@@ -248,7 +248,7 @@ EOL
 X
       cc
 EOL
-    ).should.include("<<X\n        bb \nX\n")
+    ).should.include("<<X\n        bb \nX")
   end
 
 end
