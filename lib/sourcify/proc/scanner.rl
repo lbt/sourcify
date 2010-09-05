@@ -72,49 +72,48 @@ module Sourcify
   # support backreferencing, so we only catch the begin fragment here.
   heredoc_start = ('<<' | '<<-') . (var | const) . newline;
 
-  # String delimiters
-  qs1  = '~' . (zlen | [^\~]* | ([^\~]*[\\][\~][^\~]*)*) . '~';
-  qs2  = '`' . (zlen | [^\`]* | ([^\`]*[\\][\`][^\`]*)*) . '`';
-  qs3  = '!' . (zlen | [^\!]* | ([^\!]*[\\][\!][^\!]*)*) . '!';
-  qs4  = '@' . (zlen | [^\@]* | ([^\@]*[\\][\@][^\@]*)*) . '@';
-  qs5  = '#' . (zlen | [^\#]* | ([^\#]*[\\][\#][^\#]*)*) . '#';
-  qs6  = '$' . (zlen | [^\$]* | ([^\$]*[\\][\$][^\$]*)*) . '$';
-  qs7  = '%' . (zlen | [^\%]* | ([^\%]*[\\][\%][^\%]*)*) . '%';
-  qs8  = '^' . (zlen | [^\^]* | ([^\^]*[\\][\^][^\^]*)*) . '^';
-  qs9  = '&' . (zlen | [^\&]* | ([^\&]*[\\][\&][^\&]*)*) . '&';
-  qs10 = '*' . (zlen | [^\*]* | ([^\*]*[\\][\*][^\*]*)*) . '*';
-  qs11 = '-' . (zlen | [^\-]* | ([^\-]*[\\][\-][^\-]*)*) . '-';
-  qs12 = '_' . (zlen | [^\_]* | ([^\_]*[\\][\_][^\_]*)*) . '_';
-  qs13 = '+' . (zlen | [^\+]* | ([^\+]*[\\][\+][^\+]*)*) . '+';
-  qs14 = '=' . (zlen | [^\=]* | ([^\=]*[\\][\=][^\=]*)*) . '=';
-  qs15 = '<' . (zlen | [^\>]* | ([^\>]*[\\][\>][^\>]*)*) . '>';
-  qs16 = '|' . (zlen | [^\|]* | ([^\|]*[\\][\|][^\|]*)*) . '|';
-  qs17 = ':' . (zlen | [^\:]* | ([^\:]*[\\][\:][^\:]*)*) . ':';
-  qs18 = ';' . (zlen | [^\;]* | ([^\;]*[\\][\;][^\;]*)*) . ';';
-  qs19 = '"' . (zlen | [^\"]* | ([^\"]*[\\][\"][^\"]*)*) . '"';
-  qs20 = "'" . (zlen | [^\']* | ([^\']*[\\][\'][^\']*)*) . "'";
-  qs21 = ',' . (zlen | [^\,]* | ([^\,]*[\\][\,][^\,]*)*) . ',';
-  qs22 = '.' . (zlen | [^\.]* | ([^\.]*[\\][\.][^\.]*)*) . '.';
-  qs23 = '?' . (zlen | [^\?]* | ([^\?]*[\\][\?][^\?]*)*) . '?';
-  qs24 = '/' . (zlen | [^\/]* | ([^\/]*[\\][\/][^\/]*)*) . '/';
-  qs25 = '{' . (zlen | [^\}]* | ([^\}]*[\\][\}][^\}]*)*) . '}';
-  qs26 = '[' . (zlen | [^\]]* | ([^\]]*[\\][\]][^\]]*)*) . ']';
-  qs27 = '(' . (zlen | [^\)]* | ([^\)]*[\\][\)][^\)]*)*) . ')';
-  qs28 = '\\' . (zlen | [^\\]* | ([^\)]*[\\][\\][^\\]*)*) . '\\';
-
   # Single quote strings are pretty straight-forward, cos no embedding/interpolation
   # support is required.
-  sqs      = ('%q' | '%w');
-  sq_str1  = qs20;        sq_str2  = sqs . qs1;   sq_str3  = sqs . qs2;
-  sq_str4  = sqs . qs3;   sq_str5  = sqs . qs4;   sq_str6  = sqs . qs5;
-  sq_str7  = sqs . qs6;   sq_str8  = sqs . qs7;   sq_str9  = sqs . qs8;
-  sq_str10 = sqs . qs9;   sq_str11 = sqs . qs10;  sq_str12 = sqs . qs11;
-  sq_str13 = sqs . qs12;  sq_str14 = sqs . qs13;  sq_str15 = sqs . qs14;
-  sq_str16 = sqs . qs15;  sq_str17 = sqs . qs16;  sq_str18 = sqs . qs17;
-  sq_str19 = sqs . qs18;  sq_str20 = sqs . qs19;  sq_str21 = sqs . qs20;
-  sq_str22 = sqs . qs21;  sq_str23 = sqs . qs22;  sq_str24 = sqs . qs23;
-  sq_str25 = sqs . qs24;  sq_str26 = sqs . qs25;  sq_str27 = sqs . qs26;
-  sq_str28 = sqs . qs27;  sq_str29 = sqs . qs28;
+  sqs1  = '~' . (zlen | [^\~]* | ([^\~]*[\\][\~][^\~]*)*) . '~';
+  sqs2  = '`' . (zlen | [^\`]* | ([^\`]*[\\][\`][^\`]*)*) . '`';
+  sqs3  = '!' . (zlen | [^\!]* | ([^\!]*[\\][\!][^\!]*)*) . '!';
+  sqs4  = '@' . (zlen | [^\@]* | ([^\@]*[\\][\@][^\@]*)*) . '@';
+  sqs5  = '#' . (zlen | [^\#]* | ([^\#]*[\\][\#][^\#]*)*) . '#';
+  sqs6  = '$' . (zlen | [^\$]* | ([^\$]*[\\][\$][^\$]*)*) . '$';
+  sqs7  = '%' . (zlen | [^\%]* | ([^\%]*[\\][\%][^\%]*)*) . '%';
+  sqs8  = '^' . (zlen | [^\^]* | ([^\^]*[\\][\^][^\^]*)*) . '^';
+  sqs9  = '&' . (zlen | [^\&]* | ([^\&]*[\\][\&][^\&]*)*) . '&';
+  sqs10 = '*' . (zlen | [^\*]* | ([^\*]*[\\][\*][^\*]*)*) . '*';
+  sqs11 = '-' . (zlen | [^\-]* | ([^\-]*[\\][\-][^\-]*)*) . '-';
+  sqs12 = '_' . (zlen | [^\_]* | ([^\_]*[\\][\_][^\_]*)*) . '_';
+  sqs13 = '+' . (zlen | [^\+]* | ([^\+]*[\\][\+][^\+]*)*) . '+';
+  sqs14 = '=' . (zlen | [^\=]* | ([^\=]*[\\][\=][^\=]*)*) . '=';
+  sqs15 = '<' . (zlen | [^\>]* | ([^\>]*[\\][\>][^\>]*)*) . '>';
+  sqs16 = '|' . (zlen | [^\|]* | ([^\|]*[\\][\|][^\|]*)*) . '|';
+  sqs17 = ':' . (zlen | [^\:]* | ([^\:]*[\\][\:][^\:]*)*) . ':';
+  sqs18 = ';' . (zlen | [^\;]* | ([^\;]*[\\][\;][^\;]*)*) . ';';
+  sqs19 = '"' . (zlen | [^\"]* | ([^\"]*[\\][\"][^\"]*)*) . '"';
+  sqs20 = "'" . (zlen | [^\']* | ([^\']*[\\][\'][^\']*)*) . "'";
+  sqs21 = ',' . (zlen | [^\,]* | ([^\,]*[\\][\,][^\,]*)*) . ',';
+  sqs22 = '.' . (zlen | [^\.]* | ([^\.]*[\\][\.][^\.]*)*) . '.';
+  sqs23 = '?' . (zlen | [^\?]* | ([^\?]*[\\][\?][^\?]*)*) . '?';
+  sqs24 = '/' . (zlen | [^\/]* | ([^\/]*[\\][\/][^\/]*)*) . '/';
+  sqs25 = '{' . (zlen | [^\}]* | ([^\}]*[\\][\}][^\}]*)*) . '}';
+  sqs26 = '[' . (zlen | [^\]]* | ([^\]]*[\\][\]][^\]]*)*) . ']';
+  sqs27 = '(' . (zlen | [^\)]* | ([^\)]*[\\][\)][^\)]*)*) . ')';
+  sqs28 = '\\' . (zlen | [^\\]* | ([^\)]*[\\][\\][^\\]*)*) . '\\';
+
+  sqsm     = ('%q' | '%w');
+  sq_str1  = sqs20;         sq_str2  = sqsm . sqs1;   sq_str3  = sqsm . sqs2;
+  sq_str4  = sqsm . sqs3;   sq_str5  = sqsm . sqs4;   sq_str6  = sqsm . sqs5;
+  sq_str7  = sqsm . sqs6;   sq_str8  = sqsm . sqs7;   sq_str9  = sqsm . sqs8;
+  sq_str10 = sqsm . sqs9;   sq_str11 = sqsm . sqs10;  sq_str12 = sqsm . sqs11;
+  sq_str13 = sqsm . sqs12;  sq_str14 = sqsm . sqs13;  sq_str15 = sqsm . sqs14;
+  sq_str16 = sqsm . sqs15;  sq_str17 = sqsm . sqs16;  sq_str18 = sqsm . sqs17;
+  sq_str19 = sqsm . sqs18;  sq_str20 = sqsm . sqs19;  sq_str21 = sqsm . sqs20;
+  sq_str22 = sqsm . sqs21;  sq_str23 = sqsm . sqs22;  sq_str24 = sqsm . sqs23;
+  sq_str25 = sqsm . sqs24;  sq_str26 = sqsm . sqs25;  sq_str27 = sqsm . sqs26;
+  sq_str28 = sqsm . sqs27;  sq_str29 = sqsm . sqs28;
   single_quote_strs  = (
     sq_str1  | sq_str2  | sq_str3  | sq_str4  | sq_str5  |
     sq_str6  | sq_str7  | sq_str8  | sq_str9  | sq_str10 |
@@ -126,18 +125,19 @@ module Sourcify
 
   # Double quote strings are more tedious to work with, because of
   # embedding/interpolation issues.
-  dqs      = ('%Q' | '%W' | '%' | '%r' | '%x');
-  dq_str1  = qs19;        dq_str2  = qs2;         dq_str3  = qs24;
-  dq_str4  = dqs . qs1;   dq_str5  = dqs . qs2;   dq_str6  = dqs . qs3;
-  dq_str7  = dqs . qs4;   dq_str8  = dqs . qs5;   dq_str9  = dqs . qs6;
-  dq_str10 = dqs . qs7;   dq_str11 = dqs . qs8;   dq_str12 = dqs . qs9;
-  dq_str13 = dqs . qs10;  dq_str14 = dqs . qs11;  dq_str15 = dqs . qs12;
-  dq_str16 = dqs . qs13;  dq_str17 = dqs . qs14;  dq_str18 = dqs . qs15;
-  dq_str19 = dqs . qs16;  dq_str20 = dqs . qs17;  dq_str21 = dqs . qs18;
-  dq_str22 = dqs . qs19;  dq_str23 = dqs . qs20;  dq_str24 = dqs . qs21;
-  dq_str25 = dqs . qs22;  dq_str26 = dqs . qs23;  dq_str27 = dqs . qs24;
-  dq_str28 = dqs . qs25;  dq_str29 = dqs . qs26;  dq_str30 = dqs . qs27;
-  dq_str31 = dqs . qs28;
+
+  dqsm     = ('%Q' | '%W' | '%' | '%r' | '%x');
+  dq_str1  = dqs19;         dq_str2  = dqs2;          dq_str3  = dqs24;
+  dq_str4  = dqsm . dqs1;   dq_str5  = dqsm . dqs2;   dq_str6  = dqsm . dqs3;
+  dq_str7  = dqsm . dqs4;   dq_str8  = dqsm . dqs5;   dq_str9  = dqsm . dqs6;
+  dq_str10 = dqsm . dqs7;   dq_str11 = dqsm . dqs8;   dq_str12 = dqsm . dqs9;
+  dq_str13 = dqsm . dqs10;  dq_str14 = dqsm . dqs11;  dq_str15 = dqsm . dqs12;
+  dq_str16 = dqsm . dqs13;  dq_str17 = dqsm . dqs14;  dq_str18 = dqsm . dqs15;
+  dq_str19 = dqsm . dqs16;  dq_str20 = dqsm . dqs17;  dq_str21 = dqsm . dqs18;
+  dq_str22 = dqsm . dqs19;  dq_str23 = dqsm . dqs20;  dq_str24 = dqsm . dqs21;
+  dq_str25 = dqsm . dqs22;  dq_str26 = dqsm . dqs23;  dq_str27 = dqsm . dqs24;
+  dq_str28 = dqsm . dqs25;  dq_str29 = dqsm . dqs26;  dq_str30 = dqsm . dqs27;
+  dq_str31 = dqsm . dqs28;
   double_quote_strs  = (
     dq_str1  | dq_str2  | dq_str3  | dq_str4  | dq_str5  |
     dq_str6  | dq_str7  | dq_str8  | dq_str9  | dq_str10 |
