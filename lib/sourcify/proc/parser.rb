@@ -1,4 +1,3 @@
-require 'sourcify/proc/scanner_extensions'
 require 'sourcify/proc/scanner'
 
 module Sourcify

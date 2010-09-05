@@ -12,7 +12,6 @@ File.delete(rb_file) rescue nil
 system("ragel -R #{rl_file}")
 
 begin
-  require File.join(rl_dir, 'scanner_extensions.rb')
   require File.join(rl_dir, 'scanner.rb')
 rescue LoadError
   raise $!
