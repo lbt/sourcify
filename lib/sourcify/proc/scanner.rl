@@ -16,7 +16,7 @@ module Sourcify
   ospaces = ' '*;
   mspaces = ' '+;
 
-  ## One-liner comment
+  ## MACHINE >> One-liner comment
   per_line_comment := |*
     ^newline* => {
       push(:comment, ts.pred, te)
@@ -24,7 +24,7 @@ module Sourcify
     };
   *|;
 
-  ## Block comment
+  ## MACHINE >> Block comment
   block_comment := |*
     any* . newline . '=end' . ospaces . ^newline* => {
       unless push_comment(ts, te)
@@ -33,7 +33,7 @@ module Sourcify
     };
   *|;
 
-  ## Heredoc
+  ## MACHINE >> Heredoc
   heredoc := |*
     ^newline* . newline . ospaces . ^newline+ => {
       unless push_heredoc(ts, te)
@@ -42,7 +42,7 @@ module Sourcify
     };
   *|;
 
-  ## Double quote string
+  ## MACHINE >> Double quote string
   double_quote_str := |*
     delimiter = [\~\`\!\@\#\$\%\^\&\*\)\-\_\+\=\}\]\:\;\'\"\>\,\.\?\/\|\\];
     (^delimiter* . delimiter) -- ('\\' . delimiter) => {
@@ -52,7 +52,7 @@ module Sourcify
     };
   *|;
 
-  ## Main
+  ## MACHINE >> Main
   main := |*
 
     ## Singleton class
