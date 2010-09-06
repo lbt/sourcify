@@ -30,13 +30,9 @@ module Sourcify
           def safe_contents
             # NOTE: %x & ` strings are dangerous to eval cos they execute shell commands,
             # thus we convert them to normal strings 1st
-            contents = @contents.join
-            if contents.start_with?(s = '%x')
-              contents.sub!(s,'%Q')
-            elsif contents.start_with?(s = '`')
-              contents.sub!(s,'%Q`')
+            @contents.join.gsub(/(%x)(\W|\_)/, '%Q\2').gsub(/.{0,2}(`)/) do |s|
+              s =~ /^(%Q|%W|%r|%x|.?%|.?\\)/ ? s : s.sub(/`$/,'%Q`')
             end
-            contents
           end
 
           def start_tag
