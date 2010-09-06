@@ -53,13 +53,8 @@ module Sourcify
       fgoto main;
     };
 
-    ospaces => {
-      push(:space, ts, te)
-    };
-
-    any => {
-      fhold; fgoto main;
-    };
+    ospaces => { push(:space, ts, te) };
+    any => { fhold; fgoto main; };
 
   *|;
 
