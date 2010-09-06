@@ -23,8 +23,7 @@ module Sourcify
 
         def push(key, ts, te)
           data = data_frag(ts .. te.pred)
-          @keys << key
-          @tokens << data_frag(ts .. te.pred)
+          @tokens << [key, data_frag(ts .. te.pred)]
         end
 
         def data_frag(range)
@@ -36,8 +35,7 @@ module Sourcify
           @dstring = DString.new(data[%r{^("|`|/|%(?:Q|W|r|x|)(?:\W|_))},1]) unless @dstring
           @dstring << data
           return true unless @dstring.closed?
-          @tokens << @dstring.to_s
-          @keys << :dstring
+          @tokens << [:dstring, @dstring.to_s]
           @dstring = nil
         end
 
@@ -46,8 +44,7 @@ module Sourcify
           @comment ||= Comment.new
           @comment << data
           return true unless @comment.closed?(data_frag(te .. te))
-          @tokens << @comment.to_s
-          @keys << :comment
+          @tokens << [:comment, @comment.to_s]
           @comment = nil
         end
 
@@ -60,8 +57,7 @@ module Sourcify
           else
             @heredoc << data
             return true unless @heredoc.closed?(data_frag(te .. te))
-            @tokens << @heredoc.to_s
-            @keys << :heredoc
+            @tokens << [:heredoc, @heredoc.to_s]
             @heredoc = nil
           end
         end
@@ -69,14 +65,13 @@ module Sourcify
         def push_label(data)
           # NOTE: 1.9.* supports label key, which RubyParser cannot handle, thus
           # conversion is needed.
-          @tokens << data.sub(/^(.*)\:$/, ':\1') << ' ' << '=>'
-          @keys << :symbol << :spaces << :assoc
+          @tokens << [:symbol, data.sub(/^(.*)\:$/, ':\1')]
+          @tokens << [:space, ' ']
+          @tokens << [:assoc, '=>']
         end
 
         def increment_lineno
-          puts '', 'increment_line (before) ... %s' % @lineno
           @lineno += 1
-          puts '', 'increment_line (after) ... %s' % @lineno
           raise Escape unless @results.empty?
         end
 
@@ -103,9 +98,7 @@ module Sourcify
 
         def decrement_do_end_counter
           return unless @do_end_counter.started?
-          puts '', 'before decrement_do_end_counter = %s, %s' % @do_end_counter.counts
           @do_end_counter.decrement
-          puts '', 'after decrement_do_end_counter = %s, %s' % @do_end_counter.counts
           construct_result_code if @do_end_counter.balanced?
         end
 
@@ -129,10 +122,8 @@ module Sourcify
 
         def construct_result_code
           begin
-            code = 'proc ' + @tokens.join
-            puts '', code 
+            code = 'proc ' + @tokens.map(&:last).join
             eval(code) # TODO: is there a better way to check for SyntaxError ?
-            puts '', code
             @results << code
             raise Escape unless @lineno == 1
             reset_attributes
@@ -142,7 +133,6 @@ module Sourcify
 
         def reset_attributes
           @tokens = []
-          @keys = []
           @lineno = 1
           @heredoc = nil
           @do_end_counter = Counter.new
@@ -152,11 +142,9 @@ module Sourcify
         def offset_attributes
           @lineno = 1 # Fixing JRuby's lineno bug (see http://jira.codehaus.org/browse/JRUBY-5014)
           unless @tokens.empty?
-            [@tokens, @keys].each do |var|
-              last = var[-1]
-              var.clear
-              var << last
-            end
+            last = @tokens[-1]
+            @tokens.clear
+            @tokens << last
           end
         end
 

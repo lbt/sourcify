@@ -8,7 +8,7 @@ aa
 # bb
 cc
 EOL
-           ).should.include('# bb')
+           ).should.include([:comment, '# bb'])
   end
 
   should 'handle middle of line' do
@@ -16,7 +16,7 @@ EOL
 aa # bb
 cc
 EOL
-           ).should.include('# bb')
+           ).should.include([:comment, '# bb'])
   end
 
   should 'ignore within heredoc' do
@@ -27,7 +27,7 @@ aa
 cc
 eol
 EOL
-           ).should.not.include('# bb')
+           ).should.not.include([:comment, '# bb'])
 
   end
 

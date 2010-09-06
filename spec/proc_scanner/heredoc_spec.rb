@@ -9,7 +9,7 @@ describe "Heredoc (wo indent)" do
  aa 
 X
 EOL
-             ).should.include("<<#{tag}\n aa \nX")
+             ).should.include([:heredoc, "<<#{tag}\n aa \nX"])
     end
 
     should "not handle <<#{tag} \\n .. \\nX\\n" do
@@ -18,7 +18,7 @@ EOL
  aa 
 X
 EOL
-             ).should.not.include("<<#{tag} \n aa \nX")
+             ).should.not.include([:heredoc, "<<#{tag} \n aa \nX"])
     end
 
     should "not handle <<#{tag}\\n .. \\n X\\n" do
@@ -27,7 +27,7 @@ EOL
  aa 
  X
 EOL
-             ).should.not.include("<<#{tag} \n aa \n X")
+             ).should.not.include([:heredoc, "<<#{tag} \n aa \n X"])
     end
 
     should "not handle <<#{tag}\\n .. \\nX \\n" do
@@ -36,7 +36,7 @@ EOL
  aa
 X 
 EOL
-             ).should.not.include("<<#{tag} \n aa \nX ")
+             ).should.not.include([:heredoc, "<<#{tag} \n aa \nX "])
     end
 
     should "not handle class <<#{tag}\\n .. \\nX \\n" do
@@ -45,7 +45,7 @@ EOL
  aa 
 X
 EOL
-             ).should.not.include("<<#{tag}\n aa \nX")
+             ).should.not.include([:heredoc, "<<#{tag}\n aa \nX"])
     end
 
     should "handle xclass <<#{tag}\\n .. \\nX \\n" do
@@ -54,7 +54,7 @@ EOL
  aa 
 X
 EOL
-             ).should.include("<<#{tag}\n aa \nX")
+             ).should.include([:heredoc, "<<#{tag}\n aa \nX"])
     end
 
     should "handle classx <<#{tag}\\n .. \\nX \\n" do
@@ -63,7 +63,7 @@ EOL
  aa 
 X
 EOL
-             ).should.include("<<#{tag}\n aa \nX")
+             ).should.include([:heredoc, "<<#{tag}\n aa \nX"])
     end
 
     should "handle <<#{tag}\\n .. \\nX \\n" do
@@ -72,7 +72,7 @@ EOL
  aa 
 X
 EOL
-             ).should.include("<<#{tag}\n aa \nX")
+             ).should.include([:heredoc, "<<#{tag}\n aa \nX"])
     end
 
   end
@@ -87,7 +87,7 @@ describe "Heredoc (w indent)" do
  aa 
 X
 EOL
-             ).should.include("<<-#{tag}\n aa \nX")
+             ).should.include([:heredoc, "<<-#{tag}\n aa \nX"])
     end
 
     should "handle <<-#{tag}\\n .. \\n X\\n" do
@@ -96,7 +96,7 @@ EOL
  aa 
  X
 EOL
-             ).should.include("<<-#{tag}\n aa \n X")
+             ).should.include([:heredoc, "<<-#{tag}\n aa \n X"])
     end
 
     should "not handle <<-#{tag} \\n .. \\nX\\n" do
@@ -105,7 +105,7 @@ EOL
  aa 
 X
 EOL
-             ).should.not.include("<<-#{tag} \n aa \n X")
+             ).should.not.include([:heredoc, "<<-#{tag} \n aa \n X"])
     end
 
     should "not handle <<-#{tag}\\n .. \\nX \\n" do
@@ -114,7 +114,7 @@ EOL
  aa 
 X 
 EOL
-             ).should.not.include("<<-#{tag}\n aa \nX ")
+             ).should.not.include([:heredoc, "<<-#{tag}\n aa \nX "])
     end
 
     should "not handle class <<-#{tag}\\n .. \\nX \\n" do
@@ -123,7 +123,7 @@ EOL
  aa 
 X
 EOL
-             ).should.not.include("<<-#{tag}\n aa \nX")
+             ).should.not.include([:heredoc, "<<-#{tag}\n aa \nX"])
     end
 
     should "handle xclass <<-#{tag}\\n .. \\nX \\n" do
@@ -132,7 +132,7 @@ EOL
  aa 
 X
 EOL
-             ).should.include("<<-#{tag}\n aa \nX")
+             ).should.include([:heredoc, "<<-#{tag}\n aa \nX"])
     end
 
     should "handle classx <<-#{tag}\\n .. \\nX \\n" do
@@ -141,7 +141,7 @@ EOL
  aa 
 X
 EOL
-             ).should.include("<<-#{tag}\n aa \nX")
+             ).should.include([:heredoc, "<<-#{tag}\n aa \nX"])
     end
 
     should "handle <<-#{tag}\\n .. \\nX \\n" do
@@ -150,7 +150,7 @@ EOL
  aa 
 X
 EOL
-             ).should.include("<<-#{tag}\n aa \nX")
+             ).should.include([:heredoc, "<<-#{tag}\n aa \nX"])
     end
 
   end

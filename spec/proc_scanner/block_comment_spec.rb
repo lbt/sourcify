@@ -10,7 +10,7 @@ aa
 =end
 cc
 EOL
-           ).should.include("\n=begin\n bb \n=end")
+           ).should.include([:comment, "\n=begin\n bb \n=end"])
   end
 
   should 'handle =begin \n ... =end\n' do
@@ -21,7 +21,7 @@ aa
 =end
 cc
 EOL
-           ).should.include("\n=begin \n bb \n=end")
+           ).should.include([:comment, "\n=begin \n bb \n=end"])
   end
 
   should 'handle =begin aa \n ... =end\n' do
@@ -32,7 +32,7 @@ EOL
 =end
 cc
 EOL
-           ).should.include("\n=begin aa \n bb \n=end")
+           ).should.include([:comment, "\n=begin aa \n bb \n=end"])
   end
 
   should 'handle =begin\n ... =end \n' do
@@ -43,7 +43,7 @@ aa
 =end 
 cc
 EOL
-           ).should.include("\n=begin\n bb \n=end ")
+           ).should.include([:comment, "\n=begin\n bb \n=end "])
   end
 
   should 'not handle =begin\n ... =end ... \n' do
@@ -53,7 +53,7 @@ aa
  bb 
 =end cc
 EOL
-           ).should.not.include("\n=begin\n bb \n=end cc")
+           ).should.not.include([:comment, "\n=begin\n bb \n=end cc"])
   end
 
 end
