@@ -70,7 +70,6 @@ module Sourcify
     };
 
     ## Single quote strings
-    sqsm  = ('%q' | '%w');
     sqs1  = "'" . (zlen | [^\']* | ([^\']*[\\][\'][^\']*)*) . "'";
     sqs2  = '~' . (zlen | [^\~]* | ([^\~]*[\\][\~][^\~]*)*) . '~';
     sqs3  = '`' . (zlen | [^\`]* | ([^\`]*[\\][\`][^\`]*)*) . '`';
@@ -100,31 +99,65 @@ module Sourcify
     sqs27 = '(' . (zlen | [^\)]* | ([^\)]*[\\][\)][^\)]*)*) . ')';
     sqs28 = '\\' . (zlen | [^\\]* | ([^\)]*[\\][\\][^\\]*)*) . '\\';
 
-    sqstr1  = sqs1;         sqstr2  = sqsm . sqs1;  sqstr3  = sqsm . sqs2;
-    sqstr4  = sqsm . sqs3;  sqstr5  = sqsm . sqs4;  sqstr6  = sqsm . sqs5;
-    sqstr7  = sqsm . sqs6;  sqstr8  = sqsm . sqs7;  sqstr9  = sqsm . sqs8;
-    sqstr10 = sqsm . sqs9;  sqstr11 = sqsm . sqs10; sqstr12 = sqsm . sqs11;
-    sqstr13 = sqsm . sqs12; sqstr14 = sqsm . sqs13; sqstr15 = sqsm . sqs14;
-    sqstr16 = sqsm . sqs15; sqstr17 = sqsm . sqs16; sqstr18 = sqsm . sqs17;
-    sqstr19 = sqsm . sqs18; sqstr20 = sqsm . sqs19; sqstr21 = sqsm . sqs20;
-    sqstr22 = sqsm . sqs21; sqstr23 = sqsm . sqs22; sqstr24 = sqsm . sqs23;
-    sqstr25 = sqsm . sqs24; sqstr26 = sqsm . sqs25; sqstr27 = sqsm . sqs26;
-    sqstr28 = sqsm . sqs27; sqstr29 = sqsm . sqs28;
-
-    (
-      sqstr1  | sqstr2  | sqstr3  | sqstr4  | sqstr5  | sqstr6  |
-      sqstr7  | sqstr8  | sqstr9  | sqstr10 | sqstr11 | sqstr12 |
-      sqstr13 | sqstr14 | sqstr15 | sqstr16 | sqstr17 | sqstr18 |
-      sqstr19 | sqstr20 | sqstr21 | sqstr22 | sqstr23 | sqstr24 |
-      sqstr25 | sqstr26 | sqstr27 | sqstr28 | sqstr29
+    sqm = ('%q' | '%w'); (
+      sqs1        | sqm . sqs1  | sqm . sqs2  | sqm . sqs3  | sqm . sqs4  |
+      sqm . sqs5  | sqm . sqs6  | sqm . sqs7  | sqm . sqs8  | sqm . sqs9  |
+      sqm . sqs10 | sqm . sqs11 | sqm . sqs12 | sqm . sqs13 | sqm . sqs14 |
+      sqm . sqs15 | sqm . sqs16 | sqm . sqs17 | sqm . sqs18 | sqm . sqs19 |
+      sqm . sqs20 | sqm . sqs21 | sqm . sqs22 | sqm . sqs23 | sqm . sqs24 |
+      sqm . sqs25 | sqm . sqs26 | sqm . sqs27 | sqm . sqs28
     ) => {
-      push(:string, ts, te)
+      push(:sstring, ts, te)
+    };
+
+    ## Double quote strings (wo interpolation, simply assuming if there is
+    ## no occurrence of '}' within, then there is no interpolation)
+    dqs1  = '"' . (zlen | [^\"\}]* | ([^\"\}]*[\\][\"][^\"\}]*)*) . '"';
+    dqs2  = '`' . (zlen | [^\`\}]* | ([^\`\}]*[\\][\`][^\`\}]*)*) . '`';
+    dqs3  = '/' . (zlen | [^\/\}]* | ([^\/\}]*[\\][\/][^\/\}]*)*) . '/';
+    dqs4  = "'" . (zlen | [^\'\}]* | ([^\'\}]*[\\][\'][^\'\}]*)*) . "'";
+    dqs5  = '~' . (zlen | [^\~\}]* | ([^\~\}]*[\\][\~][^\~\}]*)*) . '~';
+    dqs6  = '!' . (zlen | [^\!\}]* | ([^\!\}]*[\\][\!][^\!\}]*)*) . '!';
+    dqs7  = '@' . (zlen | [^\@\}]* | ([^\@\}]*[\\][\@][^\@\}]*)*) . '@';
+    dqs8  = '#' . (zlen | [^\#\}]* | ([^\#\}]*[\\][\#][^\#\}]*)*) . '#';
+    dqs9  = '$' . (zlen | [^\$\}]* | ([^\$\}]*[\\][\$][^\$\}]*)*) . '$';
+    dqs10 = '%' . (zlen | [^\%\}]* | ([^\%\}]*[\\][\%][^\%\}]*)*) . '%';
+    dqs11 = '^' . (zlen | [^\^\}]* | ([^\^\}]*[\\][\^][^\^\}]*)*) . '^';
+    dqs12 = '&' . (zlen | [^\&\}]* | ([^\&\}]*[\\][\&][^\&\}]*)*) . '&';
+    dqs13 = '*' . (zlen | [^\*\}]* | ([^\*\}]*[\\][\*][^\*\}]*)*) . '*';
+    dqs14 = '-' . (zlen | [^\-\}]* | ([^\-\}]*[\\][\-][^\-\}]*)*) . '-';
+    dqs15 = '_' . (zlen | [^\_\}]* | ([^\_\}]*[\\][\_][^\_\}]*)*) . '_';
+    dqs16 = '+' . (zlen | [^\+\}]* | ([^\+\}]*[\\][\+][^\+\}]*)*) . '+';
+    dqs17 = '=' . (zlen | [^\=\}]* | ([^\=\}]*[\\][\=][^\=\}]*)*) . '=';
+    dqs18 = '<' . (zlen | [^\>\}]* | ([^\>\}]*[\\][\>][^\>\}]*)*) . '>';
+    dqs19 = '|' . (zlen | [^\|\}]* | ([^\|\}]*[\\][\|][^\|\}]*)*) . '|';
+    dqs20 = ':' . (zlen | [^\:\}]* | ([^\:\}]*[\\][\:][^\:\}]*)*) . ':';
+    dqs21 = ';' . (zlen | [^\;\}]* | ([^\;\}]*[\\][\;][^\;\}]*)*) . ';';
+    dqs22 = ',' . (zlen | [^\,\}]* | ([^\,\}]*[\\][\,][^\,\}]*)*) . ',';
+    dqs23 = '.' . (zlen | [^\.\}]* | ([^\.\}]*[\\][\.][^\.\}]*)*) . '.';
+    dqs24 = '?' . (zlen | [^\?\}]* | ([^\?\}]*[\\][\?][^\?\}]*)*) . '?';
+    dqs25 = '{' . (zlen | [^\}\}]* | ([^\}\}]*[\\][\}][^\}\}]*)*) . '}';
+    dqs26 = '[' . (zlen | [^\]\}]* | ([^\]\}]*[\\][\]][^\]\}]*)*) . ']';
+    dqs27 = '(' . (zlen | [^\)\}]* | ([^\)\}]*[\\][\)][^\)\}]*)*) . ')';
+    dqs28 = '\\' . (zlen | [^\\\}]* | ([^\\\}]*[\\][\\][^\\\}]*)*) . '\\';
+
+    dqm = ('%Q' | '%W' | '%x' | '%r' | '%'); (
+      dqs1        | dqs2        | dqs3        | dqm . dqs1  | dqm . dqs2  |
+      dqm . dqs3  | dqm . dqs4  | dqm . dqs5  | dqm . dqs6  | dqm . dqs7  |
+      dqm . dqs8  | dqm . dqs9  | dqm . dqs10 | dqm . dqs11 | dqm . dqs12 |
+      dqm . dqs13 | dqm . dqs14 | dqm . dqs15 | dqm . dqs16 | dqm . dqs17 |
+      dqm . dqs18 | dqm . dqs19 | dqm . dqs20 | dqm . dqs21 | dqm . dqs22 |
+      dqm . dqs23 | dqm . dqs24 | dqm . dqs25 | dqm . dqs26 | dqm . dqs27 |
+      dqm . dqs28
+    ) => {
+      push(:dstring, ts, te)
     };
 
     ## Misc
     var     => { push(:variable, ts, te) };
     const   => { push(:constant, ts, te) };
     newline => { push(:newline, ts, te) };
+    mspaces => { push(:space, ts, te) };
     any     => { push(:any, ts, te) };
 
   *|;
