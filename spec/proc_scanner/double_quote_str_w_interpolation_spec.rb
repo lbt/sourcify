@@ -2,8 +2,8 @@ require File.join(File.dirname(__FILE__), 'spec_helper')
 
 describe 'Double quote strings (w interpolation)' do
 
-  #%w{~ ` ! @ $ % ^ & * _ - + = | ; : ' " , . ? / # \\}.map{|w| [w,w] }.concat(
-  %w{~ ` ! @ $ % ^ & * _ - + = | ; : ' " , . ? /}.map{|w| [w,w] }.concat(
+  # NOTE: we skip %Q#...# cos %Q#..#{..}..# is invalid syntax.
+  %w{~ ` ! @ $ % ^ & * _ - + = | ; : ' " , . ? / \\}.map{|w| [w,w] }.concat(
     [%w{( )}, %w{[ ]}, %w({ }), %w{< >}]
   ).each do |q1,q2|
     ['Q', 'W', 'x', 'r', ''].each do |t|
