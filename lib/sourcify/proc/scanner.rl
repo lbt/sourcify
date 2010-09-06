@@ -58,14 +58,14 @@ module Sourcify
     ## Block comment
     newline . '=begin' . ospaces . (ospaces . ^newline+)* . newline => {
       push_comment(ts, te)
-      increment_line
+      increment_lineno
       fgoto block_comment;
     };
 
     ## Heredoc
     ('<<' | '<<-') . ["']? . (const | var) . ["']? . newline => {
       push_heredoc(ts, te)
-      increment_line
+      increment_lineno
       fgoto heredoc;
     };
 
@@ -159,7 +159,7 @@ module Sourcify
     ## Misc
     var     => { push(:variable, ts, te) };
     const   => { push(:constant, ts, te) };
-    newline => { push(:newline, ts, te); increment_line };
+    newline => { push(:newline, ts, te); increment_lineno };
     mspaces => { push(:space, ts, te) };
     any     => { push(:any, ts, te) };
 
@@ -331,13 +331,13 @@ module Sourcify
 #    do_block_mstart_w_nl => {
 #      push(k = :do_block_mstart, ts, te)
 #      increment_counter(k, :do_end)
-#      increment_line
+#      increment_lineno
 #    };
 #
 #    do_block_ostart_w_nl => {
 #      push(k = :do_block_ostart, ts, te)
 #      increment_counter(k, :do_end)
-#      increment_line
+#      increment_lineno
 #    };
 #
 #    lbrace => {
@@ -352,7 +352,7 @@ module Sourcify
 #
 #    newline  => {
 #      push(:newline, ts, te)
-#      increment_line
+#      increment_lineno
 #    };
 #
 #    assoc    => {
@@ -367,7 +367,7 @@ module Sourcify
 #
 #    heredoc_start => {
 #      push(:heredoc_start, ts, te)
-#      increment_line
+#      increment_lineno
 #    };
 #
 #    single_quote_strs => { push(:squote_str, ts, te) };

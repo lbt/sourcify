@@ -66,7 +66,7 @@ module Sourcify
           @keys << :symbol << :spaces << :assoc
         end
 
-        def increment_line
+        def increment_lineno
           puts '', 'increment_line (before) ... %s' % @lineno
           @lineno += 1
           puts '', 'increment_line (after) ... %s' % @lineno
