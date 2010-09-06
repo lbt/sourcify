@@ -21,12 +21,12 @@ module Sourcify
           end
         end
 
-        def push(key, ts, te)
-          @tokens << [key, data_frag(ts .. te.pred)]
-        end
-
         def data_frag(range)
           @data[range].pack('c*')
+        end
+
+        def push(key, ts, te)
+          @tokens << [key, data_frag(ts .. te.pred)]
         end
 
         def push_dstring(ts, te)
@@ -61,9 +61,10 @@ module Sourcify
           @heredoc = nil
         end
 
-        def push_label(data)
+        def push_label(ts, te)
           # NOTE: 1.9.* supports label key, which RubyParser cannot handle, thus
           # conversion is needed.
+          data = data_frag(ts .. te.pred)
           @tokens << [:symbol, data.sub(/^(.*)\:$/, ':\1')]
           @tokens << [:space, ' ']
           @tokens << [:assoc, '=>']
@@ -74,41 +75,29 @@ module Sourcify
           raise Escape unless @results.empty?
         end
 
-        def increment_counter(type, count = 1)
-          send(:"increment_#{type}_counter", count)
+        def increment_counter(key, count = 1)
+          return if other_counter(key).started?
+          counter = this_counter(key)
+          offset_attributes unless counter.started?
+          counter.increment(count)
         end
 
-        def decrement_counter(type, key)
-          send(:"decrement_#{key}_counter")
-        end
-
-        def increment_do_end_counter(count)
-          return if @brace_counter.started?
-          @do_end_counter.increment(count)
-        end
-
-        def decrement_do_end_counter
-          return unless @do_end_counter.started?
-          @do_end_counter.decrement
-          construct_result_code if @do_end_counter.balanced?
-        end
-
-        def increment_brace_counter(type)
-          return if @do_end_counter.started?
-          offset_attributes unless @brace_counter.started?
-          @brace_counter.increment
-        end
-
-        def decrement_brace_counter
-          return unless @brace_counter.started?
-          @brace_counter.decrement
-          construct_result_code if @brace_counter.balanced?
+        def decrement_counter(key)
+          return unless (counter = this_counter(key)).started?
+          counter.decrement
+          construct_result_code if counter.balanced?
         end
 
         def fix_counter_false_start(key)
-          if instance_variable_get(:"@#{key}_counter").just_started?
-            reset_attributes
-          end
+          reset_attributes if this_counter(key).just_started?
+        end
+
+        def other_counter(type)
+          {:do_end => @brace_counter, :brace => @do_end_counter}[type]
+        end
+
+        def this_counter(type)
+          {:brace => @brace_counter, :do_end => @do_end_counter}[type]
         end
 
         def construct_result_code
