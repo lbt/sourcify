@@ -153,10 +153,13 @@ module Sourcify
       push(:dstring, ts, te)
     };
 
+    ## Double quote strings (w interpolation, thus more tedious)
+
+
     ## Misc
     var     => { push(:variable, ts, te) };
     const   => { push(:constant, ts, te) };
-    newline => { push(:newline, ts, te) };
+    newline => { push(:newline, ts, te); increment_line };
     mspaces => { push(:space, ts, te) };
     any     => { push(:any, ts, te) };
 
