@@ -23,6 +23,7 @@ module Sourcify
 
   const   = upper . (alnum | '_')*;
   var     = (lower | '_') . (alnum | '_')*;
+  symbol  = ':' . (var | const);
   assoc   = '=>';
   label   = (var | const) . ':';
 
@@ -171,6 +172,7 @@ module Sourcify
 
     var     => { push(:var, ts, te) };
     const   => { push(:const, ts, te) };
+    symbol  => { push(:symbol, ts, te) };
     mspaces => { push(:space, ts, te) };
     any     => { push(:any, ts, te) };
 
