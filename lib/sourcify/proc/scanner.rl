@@ -73,6 +73,13 @@ module Sourcify
       fgoto block_comment;
     };
 
+    ## Misc
+    var     => { push(:variable, ts, te) };
+    const   => { push(:constant, ts, te) };
+    newline => { push(:newline, ts, te); increment_lineno };
+    mspaces => { push(:space, ts, te) };
+    any     => { push(:any, ts, te) };
+
     ## Heredoc
     ('<<' | '<<-') . ["']? . (const | var) . ["']? . newline => {
       push_heredoc(ts, te)
@@ -164,13 +171,6 @@ module Sourcify
         fgoto double_quote_str;
       end
     };
-
-    ## Misc
-    var     => { push(:variable, ts, te) };
-    const   => { push(:constant, ts, te) };
-    newline => { push(:newline, ts, te); increment_lineno };
-    mspaces => { push(:space, ts, te) };
-    any     => { push(:any, ts, te) };
 
   *|;
 
