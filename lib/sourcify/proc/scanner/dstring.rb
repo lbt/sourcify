@@ -31,10 +31,10 @@ module Sourcify
             # NOTE: %x & ` strings are dangerous to eval cos they execute shell commands,
             # thus we convert them to normal strings 1st
             contents = @contents.join
-            if contents.start_with?('%x')
-              contents.sub!('%x','%Q')
-            elsif contents.start_with?('`')
-              contents.sub!(/^\`/,'%Q`')
+            if contents.start_with?(s = '%x')
+              contents.sub!(s,'%Q')
+            elsif contents.start_with?(s = '`')
+              contents.sub!(s,'%Q`')
             end
             contents
           end
