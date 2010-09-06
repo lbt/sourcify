@@ -32,7 +32,9 @@ module Sourcify
 
         def push_dstring(ts, te)
           data = data_frag(ts .. te.pred)
-          @dstring = DString.new(data[%r{^("|`|/|%(?:Q|W|r|x|)(?:\W|_))},1]) unless @dstring
+          unless @dstring
+            @dstring = DString.new(data[%r{^("|`|/|%(?:Q|W|r|x|)(?:\W|_))},1])
+          end
           @dstring << data
           return true unless @dstring.closed?
           @tokens << [:dstring, @dstring.to_s]
@@ -50,16 +52,14 @@ module Sourcify
 
         def push_heredoc(ts, te)
           data = data_frag(ts .. te.pred)
-          if @heredoc.nil?
+          unless @heredoc
             indented, tag = data.match(/\<\<(\-?)['"]?(\w+)['"]?$/)[1..3]
             @heredoc = Heredoc.new(tag, !indented.empty?)
-            @heredoc << data
-          else
-            @heredoc << data
-            return true unless @heredoc.closed?(data_frag(te .. te))
-            @tokens << [:heredoc, @heredoc.to_s]
-            @heredoc = nil
           end
+          @heredoc << data
+          return true unless @heredoc.closed?(data_frag(te .. te))
+          @tokens << [:heredoc, @heredoc.to_s]
+          @heredoc = nil
         end
 
         def push_label(data)
@@ -76,11 +76,11 @@ module Sourcify
         end
 
         def increment_counter(type, key)
-          send(:"increment_#{key}_counter", type) unless @heredoc
+          send(:"increment_#{key}_counter", type)
         end
 
         def decrement_counter(type, key)
-          send(:"decrement_#{key}_counter") unless @heredoc
+          send(:"decrement_#{key}_counter")
         end
 
         def increment_do_end_counter(type)
@@ -134,7 +134,7 @@ module Sourcify
         def reset_attributes
           @tokens = []
           @lineno = 1
-          @heredoc = nil
+          @heredoc, @dstring, @comment = nil
           @do_end_counter = Counter.new
           @brace_counter = Counter.new
         end
