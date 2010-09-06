@@ -35,6 +35,10 @@ module Sourcify
         end
 
       end
+
+      class DoEndBlockCounter < Counter; end
+      class BraceBlockCounter < Counter; end
+
     end
   end
 end

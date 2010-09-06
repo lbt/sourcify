@@ -22,7 +22,6 @@ module Sourcify
         end
 
         def push(key, ts, te)
-          data = data_frag(ts .. te.pred)
           @tokens << [key, data_frag(ts .. te.pred)]
         end
 
@@ -75,25 +74,17 @@ module Sourcify
           raise Escape unless @results.empty?
         end
 
-        def increment_counter(type, key)
-          send(:"increment_#{key}_counter", type)
+        def increment_counter(type, count = 1)
+          send(:"increment_#{type}_counter", count)
         end
 
         def decrement_counter(type, key)
           send(:"decrement_#{key}_counter")
         end
 
-        def increment_do_end_counter(type)
+        def increment_do_end_counter(count)
           return if @brace_counter.started?
-          case type
-          when :do_block_mstart
-            @do_end_counter.increment if @do_end_counter.started?
-          when :do_block_ostart
-            @do_end_counter.increment(0..1) if @do_end_counter.started?
-          when :do_block_start
-            offset_attributes unless @do_end_counter.started?
-            @do_end_counter.increment
-          end
+          @do_end_counter.increment(count)
         end
 
         def decrement_do_end_counter
@@ -135,8 +126,8 @@ module Sourcify
           @tokens = []
           @lineno = 1
           @heredoc, @dstring, @comment = nil
-          @do_end_counter = Counter.new
-          @brace_counter = Counter.new
+          @do_end_counter = DoEndBlockCounter.new
+          @brace_counter = BraceBlockCounter.new
         end
 
         def offset_attributes

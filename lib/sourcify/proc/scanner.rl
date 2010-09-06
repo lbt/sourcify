@@ -7,14 +7,58 @@ module Sourcify
 %%{
   machine proc_scanner;
 
-  kw_class = 'class';
+  kw_class  = 'class';
+  kw_module = 'module';
+  kw_def    = 'def';
+  kw_begin  = 'begin';
+  kw_case   = 'case';
+  kw_if     = 'if';
+  kw_unless = 'unless';
+  kw_do     = 'do';
+  kw_then   = 'then';
+  kw_for    = 'for';
+  kw_while  = 'while';
+  kw_until  = 'until';
 
   const   = upper . (alnum | '_')*;
   var     = (lower | '_') . (alnum | '_')*;
 
+  lparen  = '(';
+  smcolon = ';';
   newline = '\n';
   ospaces = ' '*;
   mspaces = ' '+;
+
+  ## MACHINE >> New statement
+  new_statement := |*
+
+    kw_for | kw_while | kw_until => {
+      push(:kw_sometimes_do_end_start, ts, te)
+      increment_counter(:do_end, 0..1)
+      fgoto main;
+    };
+
+    kw_class | kw_module | kw_def | kw_begin | kw_case | kw_if | kw_unless => {
+      push(:kw_always_do_end_start, ts, te)
+      increment_counter(:do_end, 1)
+      fgoto main;
+    };
+
+    ospaces => {
+      push(:space, ts, te)
+    };
+
+    any => {
+      push(:any, ts, te)
+      fgoto main;
+    };
+
+    var => {
+      push(:var, ts, te)
+      fgoto main;
+    };
+
+  *|;
 
   ## MACHINE >> One-liner comment
   per_line_comment := |*
@@ -73,10 +117,36 @@ module Sourcify
       fgoto block_comment;
     };
 
+    ## New statement
+    newline => {
+      push(:newline, ts, te)
+      increment_lineno
+      fgoto new_statement;
+    };
+
+    smcolon => {
+      push(:smcolon, ts, te)
+      fgoto new_statement;
+    };
+
+    lparen => {
+      push(:lparen, ts, te)
+      fgoto new_statement;
+    };
+
+    kw_do => {
+      push(:kw_do, ts, te)
+      fgoto new_statement;
+    };
+
+    kw_then => {
+      push(:kw_then, ts, te)
+      fgoto new_statement;
+    };
+
     ## Misc
-    var     => { push(:variable, ts, te) };
-    const   => { push(:constant, ts, te) };
-    newline => { push(:newline, ts, te); increment_lineno };
+    var     => { push(:var, ts, te) };
+    const   => { push(:const, ts, te) };
     mspaces => { push(:space, ts, te) };
     any     => { push(:any, ts, te) };
 
