@@ -44,6 +44,12 @@ module Sourcify
 
   main := |*
 
+    ## Singleton class
+    kw_class . ospaces . '<<' . ospaces . ^newline+ => {
+      push(:sclass, ts, te);
+      increment_counter(1, :do_end)
+    };
+
     ## Per line comment
     '#' => {
       fgoto per_line_comment;
@@ -63,12 +69,59 @@ module Sourcify
       fgoto heredoc;
     };
 
-    ## Singleton class
-    kw_class . ospaces . '<<' . ospaces . ^newline+ => {
-      push(:sclass, ts, te);
-      increment_counter(1, :do_end)
+    ## Single quote strings
+    sqsm  = ('%q' | '%w');
+    sqs1  = "'" . (zlen | [^\']* | ([^\']*[\\][\'][^\']*)*) . "'";
+    sqs2  = '~' . (zlen | [^\~]* | ([^\~]*[\\][\~][^\~]*)*) . '~';
+    sqs3  = '`' . (zlen | [^\`]* | ([^\`]*[\\][\`][^\`]*)*) . '`';
+    sqs4  = '!' . (zlen | [^\!]* | ([^\!]*[\\][\!][^\!]*)*) . '!';
+    sqs5  = '@' . (zlen | [^\@]* | ([^\@]*[\\][\@][^\@]*)*) . '@';
+    sqs6  = '#' . (zlen | [^\#]* | ([^\#]*[\\][\#][^\#]*)*) . '#';
+    sqs7  = '$' . (zlen | [^\$]* | ([^\$]*[\\][\$][^\$]*)*) . '$';
+    sqs8  = '%' . (zlen | [^\%]* | ([^\%]*[\\][\%][^\%]*)*) . '%';
+    sqs9  = '^' . (zlen | [^\^]* | ([^\^]*[\\][\^][^\^]*)*) . '^';
+    sqs10 = '&' . (zlen | [^\&]* | ([^\&]*[\\][\&][^\&]*)*) . '&';
+    sqs11 = '*' . (zlen | [^\*]* | ([^\*]*[\\][\*][^\*]*)*) . '*';
+    sqs12 = '-' . (zlen | [^\-]* | ([^\-]*[\\][\-][^\-]*)*) . '-';
+    sqs13 = '_' . (zlen | [^\_]* | ([^\_]*[\\][\_][^\_]*)*) . '_';
+    sqs14 = '+' . (zlen | [^\+]* | ([^\+]*[\\][\+][^\+]*)*) . '+';
+    sqs15 = '=' . (zlen | [^\=]* | ([^\=]*[\\][\=][^\=]*)*) . '=';
+    sqs16 = '<' . (zlen | [^\>]* | ([^\>]*[\\][\>][^\>]*)*) . '>';
+    sqs17 = '|' . (zlen | [^\|]* | ([^\|]*[\\][\|][^\|]*)*) . '|';
+    sqs18 = ':' . (zlen | [^\:]* | ([^\:]*[\\][\:][^\:]*)*) . ':';
+    sqs19 = ';' . (zlen | [^\;]* | ([^\;]*[\\][\;][^\;]*)*) . ';';
+    sqs20 = '"' . (zlen | [^\"]* | ([^\"]*[\\][\"][^\"]*)*) . '"';
+    sqs21 = ',' . (zlen | [^\,]* | ([^\,]*[\\][\,][^\,]*)*) . ',';
+    sqs22 = '.' . (zlen | [^\.]* | ([^\.]*[\\][\.][^\.]*)*) . '.';
+    sqs23 = '?' . (zlen | [^\?]* | ([^\?]*[\\][\?][^\?]*)*) . '?';
+    sqs24 = '/' . (zlen | [^\/]* | ([^\/]*[\\][\/][^\/]*)*) . '/';
+    sqs25 = '{' . (zlen | [^\}]* | ([^\}]*[\\][\}][^\}]*)*) . '}';
+    sqs26 = '[' . (zlen | [^\]]* | ([^\]]*[\\][\]][^\]]*)*) . ']';
+    sqs27 = '(' . (zlen | [^\)]* | ([^\)]*[\\][\)][^\)]*)*) . ')';
+    sqs28 = '\\' . (zlen | [^\\]* | ([^\)]*[\\][\\][^\\]*)*) . '\\';
+
+    sqstr1  = sqs1;         sqstr2  = sqsm . sqs1;  sqstr3  = sqsm . sqs2;
+    sqstr4  = sqsm . sqs3;  sqstr5  = sqsm . sqs4;  sqstr6  = sqsm . sqs5;
+    sqstr7  = sqsm . sqs6;  sqstr8  = sqsm . sqs7;  sqstr9  = sqsm . sqs8;
+    sqstr10 = sqsm . sqs9;  sqstr11 = sqsm . sqs10; sqstr12 = sqsm . sqs11;
+    sqstr13 = sqsm . sqs12; sqstr14 = sqsm . sqs13; sqstr15 = sqsm . sqs14;
+    sqstr16 = sqsm . sqs15; sqstr17 = sqsm . sqs16; sqstr18 = sqsm . sqs17;
+    sqstr19 = sqsm . sqs18; sqstr20 = sqsm . sqs19; sqstr21 = sqsm . sqs20;
+    sqstr22 = sqsm . sqs21; sqstr23 = sqsm . sqs22; sqstr24 = sqsm . sqs23;
+    sqstr25 = sqsm . sqs24; sqstr26 = sqsm . sqs25; sqstr27 = sqsm . sqs26;
+    sqstr28 = sqsm . sqs27; sqstr29 = sqsm . sqs28;
+
+    (
+      sqstr1  | sqstr2  | sqstr3  | sqstr4  | sqstr5  | sqstr6  |
+      sqstr7  | sqstr8  | sqstr9  | sqstr10 | sqstr11 | sqstr12 |
+      sqstr13 | sqstr14 | sqstr15 | sqstr16 | sqstr17 | sqstr18 |
+      sqstr19 | sqstr20 | sqstr21 | sqstr22 | sqstr23 | sqstr24 |
+      sqstr25 | sqstr26 | sqstr27 | sqstr28 | sqstr29
+    ) => {
+      push(:string, ts, te)
     };
 
+    ## Misc
     var     => { push(:variable, ts, te) };
     const   => { push(:constant, ts, te) };
     newline => { push(:newline, ts, te) };
