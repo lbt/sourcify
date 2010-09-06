@@ -2,8 +2,7 @@ require File.join(File.dirname(__FILE__), 'spec_helper')
 
 describe 'Double quote strings (wo interpolation)' do
 
-  #%w{~ ` ! @ # $ % ^ & * _ - + = | \\ ; : ' " , . ? /}.map{|w| [w,w] }.concat(
-  %w{~ ` ! @ # $ % ^ & * _ - + = | ; : ' " , . ? /}.map{|w| [w,w] }.concat(
+  %w{~ ` ! @ # $ % ^ & * _ - + = | \\ ; : ' " , . ? /}.map{|w| [w,w] }.concat(
     [%w{( )}, %w{[ ]}, %w({ }), %w{< >}]
   ).each do |q1,q2|
     ['Q', 'W', 'x', 'r', ''].each do |t|
@@ -18,12 +17,18 @@ describe 'Double quote strings (wo interpolation)' do
         tokens.should.include("%#{t}#{q1}world#{q2}")
       end
 
-      should "handle %#{t}#{q1}...#{q2} (w escape (single))" do
-        process(" xx %#{t}#{q1}hel\\#{q2}lo#{q2} ").should.include("%#{t}#{q1}hel\\#{q2}lo#{q2}")
-      end
+      # NOTE: We are skipping '\\' cos %Q\hel\\o\ is always raise SyntaxError no matter
+      # how many backslashes we add
+      unless q1 == '\\'
 
-      should "handle %#{t}#{q1}...#{q2} (w escape (multiple))" do
-        process(" xx %#{t}#{q1}h\\#{q2}el\\#{q2}lo#{q2} ").should.include("%#{t}#{q1}h\\#{q2}el\\#{q2}lo#{q2}")
+        should "handle %#{t}#{q1}...#{q2} (w escape (single))" do
+          process(" xx %#{t}#{q1}hel\\#{q2}lo#{q2} ").should.include("%#{t}#{q1}hel\\#{q2}lo#{q2}")
+        end
+
+        should "handle %#{t}#{q1}...#{q2} (w escape (multiple))" do
+          process(" xx %#{t}#{q1}h\\#{q2}el\\#{q2}lo#{q2} ").should.include("%#{t}#{q1}h\\#{q2}el\\#{q2}lo#{q2}")
+        end
+
       end
 
     end
