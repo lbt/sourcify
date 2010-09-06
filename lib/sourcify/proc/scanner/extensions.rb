@@ -1,6 +1,7 @@
 curr_dir = File.dirname(__FILE__)
 require File.join(curr_dir, 'heredoc')
 require File.join(curr_dir, 'comment')
+require File.join(curr_dir, 'dstring')
 require File.join(curr_dir, 'counter')
 
 module Sourcify
@@ -30,18 +31,28 @@ module Sourcify
           @data[range].pack('c*')
         end
 
+        def push_dstring(ts, te)
+          data = data_frag(ts .. te.pred)
+          unless @dstring
+            tag = data.match(%r{^(\"|\`|\/|\%(?:Q|W|r|x|)(?:\W|_))})[1]
+            puts tag
+            @dstring = DString.new(tag)
+          end
+          @dstring << data
+          return true unless @dstring.closed?
+          @tokens << @dstring.to_s
+          @keys << :dstring
+          @dstring = nil
+        end
+
         def push_comment(ts, te)
           data = data_frag(ts .. te.pred)
-          if @comment.nil?
-            @comment = Comment.new
-            @comment << data
-          else
-            @comment << data
-            return true unless @comment.closed?(data_frag(te .. te))
-            @tokens << @comment.to_s
-            @keys << :comment
-            @comment = nil
-          end
+          @comment ||= Comment.new
+          @comment << data
+          return true unless @comment.closed?(data_frag(te .. te))
+          @tokens << @comment.to_s
+          @keys << :comment
+          @comment = nil
         end
 
         def push_heredoc(ts, te)
