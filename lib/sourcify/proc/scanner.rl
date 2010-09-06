@@ -26,7 +26,7 @@ module Sourcify
 
   ## Block comment
   block_comment := |*
-    any* . newline . '=end' . ospaces => {
+    any* . newline . '=end' . ospaces . ^newline* => {
       unless push_comment(ts, te)
         fgoto main;
       end

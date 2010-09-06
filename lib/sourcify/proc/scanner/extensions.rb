@@ -45,7 +45,7 @@ module Sourcify
           data = data_frag(ts .. te.pred)
           @comment ||= Comment.new
           @comment << data
-          return true unless @comment.closed?(data_frag(te .. te))
+          return true unless @comment.closed?
           @tokens << [:comment, @comment.to_s]
           @comment = nil
         end

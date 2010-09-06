@@ -11,8 +11,8 @@ module Sourcify
           @contents.join
         end
 
-        def closed?(sealer)
-          sealer == "\n"
+        def closed?
+          @contents[-1].split("\n")[-1].strip == '=end'
         end
 
       end
