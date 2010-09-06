@@ -58,7 +58,6 @@ module Sourcify
     };
 
     any => {
-      push(:any, ts, te)
       fhold; fgoto main;
     };
 
