@@ -38,7 +38,10 @@ module Sourcify
       fgoto main;
     };
 
-    kw_class | kw_module | kw_def | kw_begin | kw_case | kw_if | kw_unless => {
+    (
+      kw_class | kw_module | kw_def | kw_begin | kw_case | kw_if | kw_unless |
+      kw_class . ospaces . '<<' . ospaces . ^newline+
+    ) => {
       push(:kw_always_do_end_start, ts, te)
       increment_counter(:do_end, 1)
       fgoto main;
@@ -50,12 +53,7 @@ module Sourcify
 
     any => {
       push(:any, ts, te)
-      fgoto main;
-    };
-
-    var => {
-      push(:var, ts, te)
-      fgoto main;
+      fhold; fgoto main;
     };
 
   *|;
@@ -98,12 +96,6 @@ module Sourcify
 
   ## MACHINE >> Main
   main := |*
-
-    ## Singleton class
-    kw_class . ospaces . '<<' . ospaces . ^newline+ => {
-      push(:sclass, ts, te);
-      increment_counter(1, :do_end)
-    };
 
     ## Per line comment
     '#' => {
