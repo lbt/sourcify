@@ -19,11 +19,17 @@ module Sourcify
   kw_for    = 'for';
   kw_while  = 'while';
   kw_until  = 'until';
+  kw_end    = 'end';
 
   const   = upper . (alnum | '_')*;
   var     = (lower | '_') . (alnum | '_')*;
+  assoc   = '=>';
+  label   = (var | const) . ':';
 
   lparen  = '(';
+  rparen  = ')';
+  lbrace  = '{';
+  rbrace  = '}';
   smcolon = ';';
   newline = '\n';
   ospaces = ' '*;
@@ -33,7 +39,7 @@ module Sourcify
   new_statement := |*
 
     kw_for | kw_while | kw_until => {
-      push(:kw_sometimes_do_end_start, ts, te)
+      push(:kw_do_alias2, ts, te)
       increment_counter(:do_end, 0..1)
       fgoto main;
     };
@@ -42,7 +48,7 @@ module Sourcify
       kw_class | kw_module | kw_def | kw_begin | kw_case | kw_if | kw_unless |
       kw_class . ospaces . '<<' . ospaces . ^newline+
     ) => {
-      push(:kw_always_do_end_start, ts, te)
+      push(:kw_do_alias1, ts, te)
       increment_counter(:do_end, 1)
       fgoto main;
     };
@@ -97,19 +103,43 @@ module Sourcify
   ## MACHINE >> Main
   main := |*
 
-    ## Per line comment
-    '#' => {
-      fgoto per_line_comment;
+    ## == Start/end of do..end block
+
+    kw_do => {
+      push(:kw_do, ts, te)
+      increment_counter(:do_end)
+      fgoto new_statement;
     };
 
-    ## Block comment
-    newline . '=begin' . ospaces . (ospaces . ^newline+)* . newline => {
-      push_comment(ts, te)
-      increment_lineno
-      fgoto block_comment;
+    kw_end => {
+      push(:kw_end, ts, te)
+      decrement_counter(:do_end)
     };
 
-    ## New statement
+    ## == Start/end of {...} block
+
+    lbrace => {
+      push(:lbrace, ts, te)
+      increment_counter(:brace)
+    };
+
+    rbrace => {
+      push(:rbrace, ts, te)
+      decrement_counter(:brace)
+    };
+
+    assoc => {
+      push(:assoc, ts, te)
+      fix_counter_false_start(:brace)
+    };
+
+    label => {
+      push_label(ts, te)
+      fix_counter_false_start(:brace)
+    };
+
+    ## == New statement
+
     newline => {
       push(:newline, ts, te)
       increment_lineno
@@ -126,30 +156,40 @@ module Sourcify
       fgoto new_statement;
     };
 
-    kw_do => {
-      push(:kw_do, ts, te)
-      fgoto new_statement;
-    };
-
     kw_then => {
       push(:kw_then, ts, te)
       fgoto new_statement;
     };
 
-    ## Misc
+    ## == Comment
+
+    '#' => {
+      fgoto per_line_comment;
+    };
+
+    newline . '=begin' . ospaces . (ospaces . ^newline+)* . newline => {
+      push_comment(ts, te)
+      increment_lineno
+      fgoto block_comment;
+    };
+
+    ## == Misc
+
     var     => { push(:var, ts, te) };
     const   => { push(:const, ts, te) };
     mspaces => { push(:space, ts, te) };
     any     => { push(:any, ts, te) };
 
-    ## Heredoc
+    ## == Heredoc
+
     ('<<' | '<<-') . ["']? . (const | var) . ["']? . newline => {
       push_heredoc(ts, te)
       increment_lineno
       fgoto heredoc;
     };
 
-    ## Single quote strings
+    ## == Single quote strings
+
     sqs1  = "'" . ([^\']* | ([^\']*[\\][\'][^\']*)*) . "'";
     sqs2  = '~' . ([^\~]* | ([^\~]*[\\][\~][^\~]*)*) . '~';
     sqs3  = '`' . ([^\`]* | ([^\`]*[\\][\`][^\`]*)*) . '`';
@@ -190,7 +230,8 @@ module Sourcify
       push(:sstring, ts, te)
     };
 
-    ## Double quote strings
+    ## == Double quote strings
+
     dqs1  = '"' . (([^\"]* | ([^\"]*[\\][\"][^\"]*)*) -- '#{') . ('"' | '#{');
     dqs2  = '`' . (([^\`]* | ([^\`]*[\\][\`][^\`]*)*) -- '#{') . ('`' | '#{');
     dqs3  = '/' . (([^\/]* | ([^\/]*[\\][\/][^\/]*)*) -- '#{') . ('/' | '#{');
