@@ -33,11 +33,7 @@ module Sourcify
 
         def push_dstring(ts, te)
           data = data_frag(ts .. te.pred)
-          unless @dstring
-            tag = data.match(%r{^(\"|\`|\/|\%(?:Q|W|r|x|)(?:\W|_))})[1]
-            puts tag
-            @dstring = DString.new(tag)
-          end
+          @dstring = DString.new(data[%r{^("|`|/|%(?:Q|W|r|x|)(?:\W|_))},1]) unless @dstring
           @dstring << data
           return true unless @dstring.closed?
           @tokens << @dstring.to_s
