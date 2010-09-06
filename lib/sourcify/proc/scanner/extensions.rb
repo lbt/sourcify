@@ -1,8 +1,7 @@
-curr_dir = File.dirname(__FILE__)
-require File.join(curr_dir, 'heredoc')
-require File.join(curr_dir, 'comment')
-require File.join(curr_dir, 'dstring')
-require File.join(curr_dir, 'counter')
+require 'sourcify/proc/scanner/heredoc'
+require 'sourcify/proc/scanner/comment'
+require 'sourcify/proc/scanner/dstring'
+require 'sourcify/proc/scanner/counter'
 
 module Sourcify
   module Proc

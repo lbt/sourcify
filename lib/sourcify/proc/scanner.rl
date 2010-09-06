@@ -1,4 +1,4 @@
-require File.join(File.dirname(__FILE__), 'scanner', 'extensions')
+require 'sourcify/proc/scanner/extensions'
 
 module Sourcify
   module Proc
