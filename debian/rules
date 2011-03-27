@@ -5,7 +5,7 @@
 #export DH_RUBY_IGNORE_TESTS=all
 #
 # Uncomment to ignore some test failures. Valid values:
-#export DH_RUBY_IGNORE_TESTS=ruby1.8 ruby1.9.1 require-rubygems
+export DH_RUBY_IGNORE_TESTS=ruby1.8 ruby1.9.1 require-rubygems
 
 %:
 	dh $@ --buildsystem=ruby
