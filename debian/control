@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: David Greaves <david@dgreaves.com>
 Uploaders: Islam Amer <islam.amer@nokia.com>
 DM-Upload-Allowed: yes
-Build-Depends: debhelper (>= 7.0.50~), gem2deb (>= 0.1.0), ruby-ruby2ruby, ruby-sexp-processor, ruby-file-tail, ruby-parser
+Build-Depends: debhelper (>= 7.0.50~), gem2deb (>= 0.1.0), ruby-ruby2ruby, ruby-sexp-processor, ruby-file-tail, ruby-ruby-parser
 
 Standards-Version: 3.9.1
 #Vcs-Git: git://git.debian.org/collab-maint/libnet-jabber-loudmouth-perl.git
@@ -12,7 +12,7 @@ Standards-Version: 3.9.1
 Homepage: http://github.com/ngty/sourcify
 Package: ruby-sourcify
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, ruby-ruby2ruby, ruby-sexp-processor, ruby-file-tail, ruby-parser
+Depends: ${shlibs:Depends}, ${misc:Depends}, ruby-ruby2ruby, ruby-sexp-processor, ruby-file-tail, ruby-ruby-parser
 # ruby2ruby (>= 1.2.5), sexp_processor (>= 3.0.5), file-tail (>= 1.0.5), bacon (>= 0)
 Description: Workarounds before ruby-core officially supports Proc#to_source (& friends)
 
