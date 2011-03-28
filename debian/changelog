@@ -1,4 +1,4 @@
-sourcify (0.4.2-1) UNRELEASED; urgency=low
+sourcify (0.4.2-2) UNRELEASED; urgency=low
 
   * Initial release based on gem2deb
 
