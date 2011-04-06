@@ -1,4 +1,10 @@
-sourcify (0.4.2-2) UNRELEASED; urgency=low
+ruby-sourcify (0.4.2-3) unstable; urgency=low
+
+  * Update to gem2deb 0.2.1
+
+ -- David Greaves <david@dgreaves.com>  Wed, 06 Apr 2011 21:38:48 +0100
+
+ruby-sourcify (0.4.2-2) UNRELEASED; urgency=low
 
   * Initial release based on gem2deb
 
