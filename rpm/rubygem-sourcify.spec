@@ -17,8 +17,8 @@
 
 # norootforbuild
 Name:           rubygem-sourcify
-Version:        0.4.2
-Release:        0
+Version:        0.5.0
+Release:        1
 %define mod_name sourcify
 #
 Group:          Development/Languages/Ruby
