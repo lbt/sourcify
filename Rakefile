@@ -1,94 +1,57 @@
 require 'rubygems'
 require 'rake'
+require 'bundler'
+Bundler::GemHelper.install_tasks
 
-begin
-  require 'jeweler'
-  Jeweler::Tasks.new do |gem|
-    # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
-    gem.name = "sourcify"
-    gem.summary = %Q{Workarounds before ruby-core officially supports Proc#to_source (& friends)}
-    gem.description = %Q{}
-    gem.email = "ngty77@gmail.com"
-    gem.homepage = "http://github.com/ngty/sourcify"
-    gem.authors = ["NgTzeYang"]
-    gem.required_ruby_version = '>= 1.8.6'
-    gem.add_dependency 'ruby2ruby', '>= 1.2.5'
-    gem.add_dependency "sexp_processor", ">= 3.0.5"
-    gem.add_dependency "file-tail", ">= 1.0.5"
-    gem.add_development_dependency "bacon", ">= 0"
-    # Plus one of the following groups:
-    #
-    # 1). ParseTree (better performance + dynamic goodness, but not supported on java & 1.9.*)
-    # >> gem.add_dependency "ParseTree", ">= 3.0.6"
-    #
-    # 2). RubyParser (supported for all except 1.8.6)
-    # >> gem.add_dependency "ruby_parser", ">= 2.0.5"
-  end
-  Jeweler::GemcutterTasks.new
-rescue LoadError
-  puts "Jeweler (or a dependency) not available. Install it with: gem install jeweler"
-end
-
-require 'rake/testtask'
-Rake::TestTask.new(:spec) do |spec|
-  spec.libs << 'lib' << 'spec'
-  spec.pattern = 'spec/**/*_spec.rb'
-  spec.verbose = true
-end
-
-begin
-  require 'rcov/rcovtask'
-  Rcov::RcovTask.new do |spec|
-    spec.libs << 'spec'
-    spec.pattern = 'spec/**/*_spec.rb'
-    spec.verbose = true
-  end
-rescue LoadError
-  task :rcov do
-    abort "RCov is not available. In order to run rcov, you must: sudo gem install spicycode-rcov"
-  end
-end
-
-task :spec => :check_dependencies
-
-begin
-  require 'reek/adapters/rake_task'
-  Reek::RakeTask.new do |t|
-    t.fail_on_error = true
-    t.verbose = false
-    t.source_files = 'lib/**/*.rb'
-  end
-rescue LoadError
-  task :reek do
-    abort "Reek is not available. In order to run reek, you must: sudo gem install reek"
-  end
-end
-
-begin
-  require 'roodi'
-  require 'roodi_task'
-  RoodiTask.new do |t|
-    t.verbose = false
-  end
-rescue LoadError
-  task :roodi do
-    abort "Roodi is not available. In order to run roodi, you must: sudo gem install roodi"
-  end
-end
-
+SPEC_SCRIPT = File.expand_path('../spec/run_spec.sh', __FILE__)
 task :default => :spec
 
-require 'rake/rdoctask'
-Rake::RDocTask.new do |rdoc|
-  version = File.exist?('VERSION') ? File.read('VERSION') : ""
+RUBIES = {
+  :parsetree => [
+    'ruby-1.8.6-p420@sourcify-parsetree',
+    'ruby-1.8.7-p334@sourcify-parsetree',
+    'ree-1.8.7-2011.03@sourcify-parsetree'
+  ],
+  :static => [
+    'ruby-1.8.6-p420@sourcify',
+    'ruby-1.8.7-p334@sourcify',
+    'ree-1.8.7-2011.03@sourcify',
+    'jruby-1.6.1@sourcify',
+    'ruby-1.9.1-p378@sourcify',
+    'ruby-1.9.2-p180@sourcify',
+  ]
+}
 
-  rdoc.rdoc_dir = 'rdoc'
-  rdoc.title = "sourcify #{version}"
-  rdoc.rdoc_files.include('README*')
-  rdoc.rdoc_files.include('lib/**/*.rb')
+# ///////////////////////////////////////////////////////////
+# Running Specs
+# ///////////////////////////////////////////////////////////
+desc "Run all specs"
+task :spec do |t|
+  system SPEC_SCRIPT
 end
 
+desc "Run specs in all rubies (both ParseTree & static scanner modes)"
+task :'spec:all' do
+  system 'export MUTE_BACON=true; rvm ' +
+    RUBIES.values.flatten.join(',') + ' exec ' + SPEC_SCRIPT
+end
+
+desc "Run specs in rubies supporting ParseTree mode"
+task :'spec:parsetree' do
+  system 'export MUTE_BACON=true; rvm ' +
+    RUBIES[:parsetree].join(',') + ' exec ' + SPEC_SCRIPT
+end
+
+desc "Run specs in rubies supporting static scanner mode"
+task :'spec:static' do
+  system 'export MUTE_BACON=true; rvm ' +
+    RUBIES[:static].join(',') + ' exec ' + SPEC_SCRIPT
+end
+
+# ///////////////////////////////////////////////////////////
 # Benchmarking
+# ///////////////////////////////////////////////////////////
+desc "Benchmarking"
 task :benchmark, :task, :times do |t, args|
   times, task = (args.times || 5).to_i.method(:times), args.task
   title = " ~ Benchmark Results for Task :#{task} ~ "
@@ -112,5 +75,5 @@ task :benchmark, :task, :times do |t, args|
   # Showdown .. printout
   line = '=' * ([title.size, formatted_results.map(&:size).max].max + 2)
   puts [line, title, formatted_results.join("\n"), line].join("\n\n")
-
 end
+

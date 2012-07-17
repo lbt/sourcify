@@ -12,6 +12,7 @@ module Sourcify
       base.class_eval do
         Sourcify.require_rb('proc', 'methods')
         include Methods::SourceLocation
+        include Methods::ToRawSource
         include Methods::ToSource
         include Methods::ToSexp
       end
@@ -58,9 +59,13 @@ module Sourcify
       end
 
       ###
-      # Returns the code representation of this proc.
+      # Returns the code representation of this proc. Unlike Proc#to_raw_source, the
+      # returned code retains only the functional aspects, fluff like comments are
+      # stripped off.
       #
-      #   lambda {|i| i+1 }.to_source
+      #   lambda do |i|
+      #     i+1 # (blah)
+      #   end.to_source
       #   # >> "proc {|i| i+1 }"
       #
       # The following options are supported:
@@ -151,6 +156,22 @@ module Sourcify
       #
       def to_sexp(opts={}, &body_matcher)
         # NOTE: this is a stub for the actual one in Methods::ToSexp
+      end
+
+      ###
+      # Returns the raw code enclosed within this proc.
+      #
+      #   lambda do |i|
+      #     i+1 # (blah)
+      #   end.to_source
+      #   # >> "proc do |i|
+      #   # >>   i+1 # (blah)
+      #   # >> end"
+      #
+      # NOTE: The options supported are the same as those for Proc#to_source.
+      #
+      def to_raw_source(opts={}, &body_matcher)
+        # NOTE: this is a stub for the actual one in Methods::ToRawSource
       end
 
     end
